@@ -1,0 +1,6 @@
+MESSAGE(STATUS "G++.cmake")
+
+set(CMAKE_CXX_FLAGS "-std=c++17" )
+set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -ggdb -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
+
