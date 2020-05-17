@@ -494,6 +494,16 @@ struct ParameterAttributes
         step = _step;
         thumb = _step;
     }
+
+    // Typed as long long here, because Clang thinks int64_t != long long
+    void SetRanges(const long long& _min = 0, const long long& _max = 100, const long long& _origin = 0, const long long& _step = 1)
+    {
+        min = (int64_t)_min;
+        max = (int64_t)_max;
+        origin = (int64_t)_origin;
+        step = (int64_t)_step;
+        thumb = (int64_t)_step;
+    }
 };
 
 // A parameter is a variant type that can also lerp
