@@ -18,10 +18,10 @@ before_script:
   - cd build
 
 matrix:
-  exclude:
+  include:
     # Mac excluded, waiting for Mac OS Catalina 10.15
     - os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       addons:
         apt:
           packages:
@@ -30,7 +30,6 @@ matrix:
         - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
         - make
         - make tests
-  include:
     - os: linux
       dist: bionic
       addons:
@@ -38,10 +37,6 @@ matrix:
           packages:
             - cmake
             - freeglut3-dev
-            - jackd2
-            - pulseaudio
-            - libasound2
-            - libasound2-dev
             - libx11-dev
             - xcb
       env:
@@ -59,10 +54,6 @@ matrix:
           packages:
             - cmake
             - freeglut3-dev
-            - jackd2
-            - pulseaudio
-            - libasound2
-            - libasound2-dev
             - libx11-dev
             - xcb
       env:
@@ -89,10 +80,6 @@ matrix:
           packages:
             - cmake
             - freeglut3-dev
-            - jackd2
-            - pulseaudio
-            - libasound2
-            - libasound2-dev
             - libx11-dev
             - xcb
       env:
@@ -110,10 +97,6 @@ matrix:
           packages:
             - cmake
             - freeglut3-dev
-            - jackd2
-            - pulseaudio
-            - libasound2
-            - libasound2-dev
             - libx11-dev
             - xcb
       env:
@@ -131,10 +114,6 @@ matrix:
           packages:
             - cmake
             - freeglut3-dev
-            - jackd2
-            - pulseaudio
-            - libasound2
-            - libasound2-dev
             - libx11-dev
             - xcb
       env:
