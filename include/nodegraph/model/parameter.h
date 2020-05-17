@@ -494,15 +494,6 @@ struct ParameterAttributes
         step = _step;
         thumb = _step;
     }
-
-    void SetRanges(const int64_t& _min = 0, const int64_t& _max = 100, const int64_t& _origin = 0, const int64_t& _step = 1)
-    {
-        min = _min;
-        max = _max;
-        origin = _origin;
-        step = _step;
-        thumb = _step;
-    }
 };
 
 // A parameter is a variant type that can also lerp
