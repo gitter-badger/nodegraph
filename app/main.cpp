@@ -47,6 +47,8 @@ public:
         pSlider = AddInput("Slider", 0.5f);
         pButton = AddInput("Button", (int64_t)0);
 
+        pValue9 = AddInput("0-1f", .5f, ParameterAttributes(ParameterUI::Knob, 0.01f, 1.0f));
+
         ParameterAttributes sliderAttrib(ParameterUI::Slider, 0.0f, 1.0f);
         sliderAttrib.step = 0.25f;
         sliderAttrib.thumb = .25f;
@@ -57,7 +59,7 @@ public:
         pButton->SetAttributes(buttonAttrib);
 
         if (pValue1)
-            pValue1->SetViewCells(NRectf(0, 0, 1, 1));
+            pValue1->SetViewCells(NRectf(5, 2, 1, 1));
         if (pValue2)
             pValue2->SetViewCells(NRectf(1, 0, 1, 1));
         if (pValue3)
@@ -72,6 +74,8 @@ public:
             pValue7->SetViewCells(NRectf(6, 0, 1, 1));
         if (pValue8)
             pValue8->SetViewCells(NRectf(7, 0, 1, 1));
+        if (pValue9)
+            pValue9->SetViewCells(NRectf(4, 2, 1, 1));
 
         if (pSum)
             pSum->SetViewCells(NRectf(0, 1, 1, 1));
