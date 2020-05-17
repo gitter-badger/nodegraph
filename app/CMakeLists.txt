@@ -26,6 +26,7 @@ target_include_directories(${APP_NAME}
 target_link_libraries (${APP_NAME}
     PRIVATE
     SDL2::SDL2main
+    MUtils::MUtils
     NodeGraph::NodeGraph
     ${PLATFORM_LINKLIBS}
     )

@@ -17,5 +17,6 @@ LIST(APPEND PLATFORM_LINKLIBS
     dl 
     Threads::Threads
     stdc++fs
+    freetype
     ${OPENGL_LIBRARY}
     )

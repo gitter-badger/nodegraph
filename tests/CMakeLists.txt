@@ -28,6 +28,7 @@ target_include_directories(unittests PRIVATE
 target_link_libraries(unittests
     PRIVATE
         NodeGraph::NodeGraph
+        MUtils::MUtils
         ${PLATFORM_LINKLIBS}
         ${CMAKE_THREAD_LIBS_INIT})
 
