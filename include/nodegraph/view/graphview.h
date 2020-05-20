@@ -4,6 +4,7 @@
 
 #include "nodegraph/model/graph.h"
 #include "nodegraph/view/viewnode.h"
+#include "nodegraph/view/canvas.h"
 
 struct NVGcontext;
 
@@ -19,23 +20,24 @@ struct SliderData
 class GraphView
 {
 public:
-    GraphView(Graph& graph, NVGcontext* vgContext)
+    GraphView(Graph& graph, Canvas& canvas)
         : m_graph(graph),
-        vg(vgContext)
-    {}
+        m_canvas(canvas)
+    {
+        vg = static_cast<CanvasVG&>(canvas).GetVG();
+    }
 
     void BuildNodes();
-    void Show(const glm::ivec2& displaySize);
+    void Show(const MUtils::NVec2i& displaySize);
     bool ShowNode(const Node* pNode) const;
 
-
-    bool DrawKnob(glm::vec2 pos, float knobSize, Pin& pin);
+    bool DrawKnob(MUtils::NVec2f pos, float knobSize, Pin& pin);
     SliderData DrawSlider(MUtils::NRectf pos, Pin& pin);
     void DrawButton(MUtils::NRectf pos, Pin& pin);
 
     MUtils::NRectf DrawNode(const MUtils::NRectf& pos, Node* pNode);
 
-    void DrawLabel(Parameter& param, const glm::vec2& pos);
+    void DrawLabel(Parameter& param, const MUtils::NVec2f& pos);
 
     bool CheckCapture(Parameter& param, const MUtils::NRectf& region, bool& hover);
     bool HideCursor() const { return m_hideCursor; }
@@ -60,7 +62,8 @@ private:
     bool m_hideCursor = false;
     uint32_t m_currentInputIndex = 0;
 
-    std::map<Parameter*, glm::vec2> m_drawLabels;
+    std::map<Parameter*, MUtils::NVec2f> m_drawLabels;
+    Canvas& m_canvas;
 
 };
 

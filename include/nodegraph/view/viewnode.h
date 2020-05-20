@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #include "nodegraph/model/node.h"
 #include "nodegraph/model/pin.h"
 
@@ -15,7 +13,7 @@ public:
 
     Node* pModelNode = nullptr;
     bool selected = false;
-    glm::vec2 pos;
+    MUtils::NVec2f pos;
 };
 
 } // namespace NodeGraph

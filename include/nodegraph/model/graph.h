@@ -12,9 +12,6 @@
 #include "nodegraph/model/node.h"
 #include "nodegraph/model/pin.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-
 namespace NodeGraph
 {
 

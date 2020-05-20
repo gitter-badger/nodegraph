@@ -15,12 +15,12 @@ using namespace MUtils;
 
 namespace
 {
-glm::vec4 node_Color(.3f, .3f, .3f, 1.0f);
-glm::vec4 node_TitleColor(1.0f, 1.0f, 1.0f, 1.0f);
-glm::vec4 node_TitleBGColor(0.4f, .4f, 0.4f, 1.0f);
-glm::vec4 node_buttonTextColor(0.15f, .15f, 0.15f, 1.0f);
+NVec4f node_Color(.3f, .3f, .3f, 1.0f);
+NVec4f node_TitleColor(1.0f, 1.0f, 1.0f, 1.0f);
+NVec4f node_TitleBGColor(0.4f, .4f, 0.4f, 1.0f);
+NVec4f node_buttonTextColor(0.15f, .15f, 0.15f, 1.0f);
 
-glm::vec4 node_shadowColor(0.1f, 0.1f, 0.1f, .5f);
+NVec4f node_shadowColor(0.1f, 0.1f, 0.1f, .5f);
 
 float node_shadowSize = 2.0f;
 float node_borderRadius = 7.0f;
@@ -73,7 +73,7 @@ void GraphView::BuildNodes()
             if (ShowNode(pNode))
             {
                 auto spViewNode = std::make_shared<ViewNode>(pNode);
-                spViewNode->pos = glm::vec2(50, 50);
+                spViewNode->pos = NVec2f(50, 50);
 
                 mapWorldToView[pNode] = spViewNode;
                 mapInputOrder[m_currentInputIndex++] = pNode;
@@ -194,11 +194,11 @@ void GraphView::CheckInput(Pin& param, const NRectf& region, float rangePerDelta
     }
 }
 
-void GraphView::DrawLabel(Parameter& param, const glm::vec2& pos)
+void GraphView::DrawLabel(Parameter& param, const NVec2f& pos)
 {
-    glm::vec4 colorLabel(0.30f, 0.30f, 0.30f, 1.0f);
-    glm::vec4 channelColor(0.38f, 0.38f, 0.38f, 1.0f);
-    glm::vec4 fontColor(.95f, .95f, .95f, 1.0f);
+    NVec4f colorLabel(0.30f, 0.30f, 0.30f, 1.0f);
+    NVec4f channelColor(0.38f, 0.38f, 0.38f, 1.0f);
+    NVec4f fontColor(.95f, .95f, .95f, 1.0f);
     std::string val;
 
     if (param.GetType() == ParameterType::Float || param.GetType() == ParameterType::Double)
@@ -231,42 +231,34 @@ void GraphView::DrawLabel(Parameter& param, const glm::vec2& pos)
         break;
     }
 
-    NRectf rcBounds;
-    float bounds[4];
-    nvgTextBounds(vg, pos.x, pos.y, val.c_str(), nullptr, &bounds[0]);
-    rcBounds = NRectf(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
-    rcBounds.Adjust(-node_labelPad, -node_labelPad, node_labelPad, node_labelPad);
+    float fontSize = 24.0f;
+    NRectf rcFont = m_canvas.TextBounds(pos, fontSize, val.c_str());
+    //rcFont.Adjust(-rcFont.Width() / 2, -rcFont.Height() / 2);
+
+    NRectf rcBounds = rcFont;
+    rcFont.Adjust(-node_labelPad, -node_labelPad, node_labelPad, node_labelPad);
 
     auto rcShadow = rcBounds;
     rcShadow.Adjust(-node_shadowSize, -node_shadowSize, node_shadowSize, node_shadowSize);
-    nvgBeginPath(vg);
-    nvgFillColor(vg, nvgRGBAf(node_shadowColor.x, node_shadowColor.y, node_shadowColor.z, node_shadowColor.w));
-    nvgRect(vg, rcShadow.Left(), rcShadow.Top(), rcShadow.Width(), rcShadow.Height());
-    nvgFill(vg);
 
-    nvgBeginPath(vg);
-    nvgFillColor(vg, nvgRGBAf(colorLabel.x, colorLabel.y, colorLabel.z, colorLabel.w));
-    nvgRect(vg, rcBounds.Left(), rcBounds.Top(), rcBounds.Width(), rcBounds.Height());
-    nvgFill(vg);
-
-    nvgFillColor(vg, nvgRGBAf(fontColor.x, fontColor.y, fontColor.z, fontColor.w));
-    nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-    nvgText(vg, bounds[0], bounds[1], val.c_str(), nullptr);
+    m_canvas.FillRect(rcShadow, node_shadowColor);
+    m_canvas.FillRect(rcBounds, colorLabel);
+    m_canvas.Text(rcFont.Center(), fontSize, fontColor, val.c_str());
 }
 
-bool GraphView::DrawKnob(glm::vec2 pos, float knobSize, Pin& param)
+bool GraphView::DrawKnob(NVec2f pos, float knobSize, Pin& param)
 {
-    glm::vec4 color(0.45f, 0.45f, 0.45f, 1.0f);
-    glm::vec4 colorLabel(0.35f, 0.35f, 0.35f, 1.0f);
-    glm::vec4 colorHL(0.68f, 0.68f, 0.68f, 1.0f);
-    glm::vec4 channelColor(0.38f, 0.38f, 0.38f, 1.0f);
-    glm::vec4 shadowColor(0.1f, 0.1f, 0.1f, .5f);
-    glm::vec4 channelHLColor(0.98f, 0.48f, 0.28f, 1.0f);
-    glm::vec4 channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
-    glm::vec4 markColor(.9f, .9f, 0.9f, 1.0f);
-    glm::vec4 markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec4 fontColor(.95f, .95f, .95f, 1.0f);
-    float channelWidth = 5.0f;
+    NVec4f color(0.45f, 0.45f, 0.45f, 1.0f);
+    NVec4f colorLabel(0.35f, 0.35f, 0.35f, 1.0f);
+    NVec4f colorHL(0.68f, 0.68f, 0.68f, 1.0f);
+    NVec4f channelColor(0.38f, 0.38f, 0.38f, 1.0f);
+    NVec4f shadowColor(0.1f, 0.1f, 0.1f, .5f);
+    NVec4f channelHLColor(0.98f, 0.48f, 0.28f, 1.0f);
+    NVec4f channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
+    NVec4f markColor(.9f, .9f, 0.9f, 1.0f);
+    NVec4f markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
+    NVec4f fontColor(.95f, .95f, .95f, 1.0f);
+    float channelWidth = 4.0f;
     float channelGap = 10;
     float fontSize = 24.0f * (knobSize / 120.0f);
 
@@ -323,17 +315,14 @@ bool GraphView::DrawKnob(glm::vec2 pos, float knobSize, Pin& param)
     auto posArcBegin = startArc + arcRange * ratioOrigin;
 
     // Knob surrounding shadow; a filled circle behind it
-    nvgBeginPath(vg);
-    nvgCircle(vg, pos.x, pos.y, knobSize + node_shadowSize);
-    nvgFillColor(vg, nvgRGBAf(shadowColor.x, shadowColor.y, shadowColor.z, shadowColor.w));
-    nvgFill(vg);
+    m_canvas.FilledCircle(pos, knobSize + node_shadowSize, shadowColor);
 
     if (param.GetAttributes().flags & ParameterFlags::ReadOnly)
     {
-        color.a = .6f;
-        colorHL.a = .6f;
-        markColor.a = .6f;
-        channelHLColor.a = .6f;
+        color.w = .6f;
+        colorHL.w = .6f;
+        markColor.w = .6f;
+        channelHLColor.w = .6f;
     }
     else if (hover || captured)
     {
@@ -341,28 +330,15 @@ bool GraphView::DrawKnob(glm::vec2 pos, float knobSize, Pin& param)
         color = colorHL;
     }
 
-    nvgBeginPath(vg);
-    nvgCircle(vg, pos.x, pos.y, knobSize);
-    auto bg = nvgLinearGradient(vg, pos.x, pos.y + knobSize, pos.x, pos.y - knobSize, nvgRGBAf(color.x, color.y, color.z, color.w), nvgRGBAf(colorHL.x, colorHL.y, colorHL.z, colorHL.w));
-    nvgFillPaint(vg, bg);
-    nvgFill(vg);
+    m_canvas.FilledGradientCircle(pos, knobSize, NRectf(pos.x, pos.y - knobSize, 0, knobSize * 1.5f), colorHL, color);
 
     // the notch on the button/indicator
     auto markerAngle = nvgDegToRad(posArc + startArc - 120.0f);
-    nvgBeginPath(vg);
-    nvgMoveTo(vg, pos.x + (std::cos(markerAngle) * markerInset), pos.y + (std::sin(markerAngle) * markerInset));
-    nvgLineTo(vg, pos.x + (std::cos(markerAngle) * (knobSize - node_shadowSize)), pos.y + (std::sin(markerAngle) * (knobSize - node_shadowSize)));
-    nvgStrokeWidth(vg, channelWidth);
-    nvgStrokeColor(vg, nvgRGBAf(shadowColor.x, shadowColor.y, shadowColor.z, shadowColor.w));
-    nvgStroke(vg);
-    nvgStrokeWidth(vg, channelWidth - node_shadowSize);
-    nvgStrokeColor(vg, nvgRGBAf(markColor.x, markColor.y, markColor.z, markColor.w));
-    nvgStroke(vg);
+    auto markVector = NVec2f(std::cos(markerAngle), std::sin(markerAngle));
+    m_canvas.Stroke(pos + markVector * (markerInset - node_shadowSize), pos + markVector * (knobSize - node_shadowSize), channelWidth, shadowColor);
+    m_canvas.Stroke(pos + markVector * markerInset, pos + markVector * (knobSize - node_shadowSize * 2), channelWidth - node_shadowSize, markColor);
 
-    nvgBeginPath(vg);
-    nvgStrokeColor(vg, nvgRGBAf(channelColor.x, channelColor.y, channelColor.z, channelColor.w));
-    nvgArc(vg, pos.x, pos.y, knobSize + channelGap, nvgDegToRad(startArc), nvgDegToRad(60.0f), NVG_CW);
-    nvgStroke(vg);
+    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelColor, startArc, 60.0f);
 
     // Cover the shortest arc between the 2 points
     if (posArcBegin > posArc)
@@ -370,50 +346,37 @@ bool GraphView::DrawKnob(glm::vec2 pos, float knobSize, Pin& param)
         std::swap(posArcBegin, posArc);
     }
 
-    nvgBeginPath(vg);
-    nvgStrokeColor(vg, nvgRGBAf(channelHLColor.x, channelHLColor.y, channelHLColor.z, channelHLColor.w));
-    nvgArc(vg, pos.x, pos.y, knobSize + channelGap, nvgDegToRad(posArcBegin), nvgDegToRad(posArc), NVG_CW);
-    nvgStroke(vg);
+    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHLColor, posArcBegin, posArc);
 
     if (fCurrentVal > (fMax + std::numeric_limits<float>::epsilon()))
     {
-        nvgBeginPath(vg);
-        nvgStrokeColor(vg, nvgRGBAf(channelHighColor.x, channelHighColor.y, channelHighColor.z, channelHighColor.w));
-        nvgArc(vg, pos.x, pos.y, knobSize + channelGap, nvgDegToRad(endArc - 10), nvgDegToRad(endArc), NVG_CW);
-        nvgStroke(vg);
+        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, endArc - 10, endArc);
     }
     else if (fCurrentVal < (fMin - std::numeric_limits<float>::epsilon()))
     {
-        nvgBeginPath(vg);
-        nvgStrokeColor(vg, nvgRGBAf(channelHighColor.x, channelHighColor.y, channelHighColor.z, channelHighColor.w));
-        nvgArc(vg, pos.x, pos.y, knobSize + channelGap, nvgDegToRad(startArc), nvgDegToRad(startArc + 10), NVG_CW);
-        nvgStroke(vg);
+        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, startArc, startArc + 10);
     }
 
-    nvgFontSize(vg, fontSize);
-    nvgFontFace(vg, "sans");
-    nvgFillColor(vg, nvgRGBAf(fontColor.x, fontColor.y, fontColor.z, fontColor.w));
-    nvgTextAlign(vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-    nvgText(vg, pos.x, pos.y + knobSize + channelGap + fontSize * .5f + 2.0f, label.c_str(), nullptr);
+    m_canvas.Text(NVec2f(pos.x, pos.y + knobSize + channelGap + fontSize * 0.5f + 2.0f), fontSize, fontColor, label.c_str());
 
     if ((captured || hover) && (param.GetAttributes().displayType != ParameterDisplayType::None))
     {
-        m_drawLabels[&param] = glm::vec2(pos.x, pos.y - knobSize * 2.0f);
+        m_drawLabels[&param] = NVec2f(pos.x, pos.y - knobSize * 2.0f);
     }
     return false;
 }
 
 SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 {
-    glm::vec4 color(0.30f, 0.30f, 0.30f, 1.0f);
-    glm::vec4 colorHL(0.35f, 0.35f, 0.35f, 1.0f);
-    glm::vec4 channelColor(0.18f, 0.18f, 0.18f, 1.0f);
-    glm::vec4 shadowColor(0.8f, 0.8f, 0.8f, .5f);
-    glm::vec4 channelHLColor(0.98f, 0.48f, 0.28f, 1.0f);
-    glm::vec4 channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
-    glm::vec4 markColor(.55f, .55f, 0.55f, 1.0f);
-    glm::vec4 markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec4 fontColor(.8f, .8f, .8f, 1.0f);
+    NVec4f color(0.30f, 0.30f, 0.30f, 1.0f);
+    NVec4f colorHL(0.35f, 0.35f, 0.35f, 1.0f);
+    NVec4f channelColor(0.18f, 0.18f, 0.18f, 1.0f);
+    NVec4f shadowColor(0.8f, 0.8f, 0.8f, .5f);
+    NVec4f channelHLColor(0.98f, 0.48f, 0.28f, 1.0f);
+    NVec4f channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
+    NVec4f markColor(.55f, .55f, 0.55f, 1.0f);
+    NVec4f markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
+    NVec4f fontColor(.8f, .8f, .8f, 1.0f);
 
     auto& attrib = param.GetAttributes();
 
@@ -427,20 +390,13 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
     fThumb = std::clamp(fThumb, fRange * .1f, .9f);
 
     // Draw the shadow
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, region.Left(), region.Top(), region.Width(), region.Height(), node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(shadowColor.x, shadowColor.y, shadowColor.z, shadowColor.w));
-    nvgFill(vg);
+    m_canvas.FillRoundedRect(region, node_borderRadius, shadowColor);
 
     // Now we are at the contents
     region.Adjust(node_shadowSize, node_shadowSize, -node_shadowSize, -node_shadowSize);
 
     // Draw the interior
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, region.Left(), region.Top(), region.Width(), region.Height(), node_borderRadius);
-    auto bg = nvgLinearGradient(vg, region.Left(), region.Bottom(), region.Left(), region.Top(), nvgRGBAf(color.x, color.y, color.z, color.w), nvgRGBAf(colorHL.x, colorHL.y, colorHL.z, colorHL.w));
-    nvgFillPaint(vg, bg);
-    nvgFill(vg);
+    m_canvas.FillGradientRoundedRect(region, node_borderRadius, region, color, colorHL);
 
     SliderData ret;
 
@@ -474,14 +430,11 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 
     if (hover || captured)
     {
-        markColor += glm::vec4(.1f, .1f, .1f, 0.0f);
+        markColor += NVec4f(.1f, .1f, .1f, 0.0f);
     }
 
     // Draw the thumb
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, thumbRect.Left(), thumbRect.Top(), thumbRect.Width(), thumbRect.Height(), node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(markColor.x, markColor.y, markColor.z, markColor.w));
-    nvgFill(vg);
+    m_canvas.FillRoundedRect(thumbRect, node_borderRadius, markColor);
 
     ret.thumb = thumbRect;
 
@@ -490,15 +443,15 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 
 void GraphView::DrawButton(NRectf region, Pin& param)
 {
-    glm::vec4 color(0.30f, 0.30f, 0.30f, 1.0f);
-    glm::vec4 colorHL(0.35f, 0.35f, 0.35f, 1.0f);
-    glm::vec4 channelColor(0.18f, 0.18f, 0.18f, 1.0f);
-    glm::vec4 shadowColor(0.25f, 0.25f, 0.25f, 1.0f);
-    glm::vec4 channelHLColor(0.98f, 0.48f, 0.18f, 1.0f);
-    glm::vec4 channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
-    glm::vec4 markColor(.55f, .55f, 0.55f, 1.0f);
-    glm::vec4 markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec4 fontColor(.8f, .8f, .8f, 1.0f);
+    NVec4f color(0.30f, 0.30f, 0.30f, 1.0f);
+    NVec4f colorHL(0.35f, 0.35f, 0.35f, 1.0f);
+    NVec4f channelColor(0.18f, 0.18f, 0.18f, 1.0f);
+    NVec4f shadowColor(0.25f, 0.25f, 0.25f, 1.0f);
+    NVec4f channelHLColor(0.98f, 0.48f, 0.18f, 1.0f);
+    NVec4f channelHighColor(0.98f, 0.10f, 0.10f, 1.0f);
+    NVec4f markColor(.55f, .55f, 0.55f, 1.0f);
+    NVec4f markHLColor(1.0f, 1.0f, 1.0f, 1.0f);
+    NVec4f fontColor(.8f, .8f, .8f, 1.0f);
 
     auto& attrib = param.GetAttributes();
 
@@ -507,10 +460,7 @@ void GraphView::DrawButton(NRectf region, Pin& param)
     float fRange = fMax - fMin;
 
     // Draw the shadow
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, region.Left(), region.Top(), region.Width(), region.Height(), node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(shadowColor.x, shadowColor.y, shadowColor.z, shadowColor.w));
-    nvgFill(vg);
+    m_canvas.FillRoundedRect(region, node_borderRadius, shadowColor);
 
     // Now we are at the contents
     region.Adjust(node_shadowSize, node_shadowSize, -node_shadowSize, -node_shadowSize);
@@ -547,90 +497,69 @@ void GraphView::DrawButton(NRectf region, Pin& param)
         {
             buttonColor = channelHLColor;
         }
-        auto buttonHLColor = buttonColor + glm::vec4(.05, .05, .05, 0.0f);
+        auto buttonHLColor = buttonColor + NVec4f(.05f, .05f, .05f, 0.0f);
 
         if (overButton)
         {
-            buttonColor += glm::vec4(.05f, .05f, .05f, 0.0f);
-            buttonHLColor += glm::vec4(.05f, .05f, .05f, 0.0f);
+            buttonColor += NVec4f(.05f, .05f, .05f, 0.0f);
+            buttonHLColor += NVec4f(.05f, .05f, .05f, 0.0f);
         }
 
-        nvgBeginPath(vg);
         if (numButtons == 1)
         {
             buttonRegion.Adjust(0, 0, 1, 0);
-            nvgRoundedRect(vg, buttonRegion.Left(), buttonRegion.Top(), buttonRegion.Width(), buttonRegion.Height(), node_borderRadius);
+            m_canvas.FillGradientRoundedRect(buttonRegion, node_borderRadius, buttonRegion, buttonColor, buttonHLColor);
         }
         else
         {
             if (i == 0)
             {
-                nvgRoundedRectVarying(vg, buttonRegion.Left(), buttonRegion.Top(), buttonRegion.Width(), buttonRegion.Height(), node_borderRadius, 0.0f, 0.0f, node_borderRadius);
+                m_canvas.FillGradientRoundedRectVarying(buttonRegion, NVec4f(node_borderRadius, 0.0f, 0.0f, node_borderRadius), buttonRegion, buttonColor, buttonHLColor);
             }
             else if (i == numButtons - 1)
             {
                 buttonRegion.Adjust(0, 0, 1, 0);
-                nvgRoundedRectVarying(vg, buttonRegion.Left(), buttonRegion.Top(), buttonRegion.Width(), buttonRegion.Height(), 0.0f, node_borderRadius, node_borderRadius, 0.0f);
+                m_canvas.FillGradientRoundedRectVarying(buttonRegion, NVec4f(0.0f, node_borderRadius, node_borderRadius, 0.0f), buttonRegion, buttonColor, buttonHLColor);
             }
             else
             {
-                nvgRect(vg, buttonRegion.Left(), buttonRegion.Top(), buttonRegion.Width(), buttonRegion.Height());
+                m_canvas.FillGradientRoundedRect(buttonRegion, 0.0f, buttonRegion, buttonColor, buttonHLColor);
             }
         }
-        auto bg = nvgLinearGradient(vg, buttonRegion.Left(), buttonRegion.Bottom(), buttonRegion.Left(), buttonRegion.Top(), nvgRGBAf(buttonColor.x, buttonColor.y, buttonColor.z, buttonColor.w), nvgRGBAf(buttonHLColor.x, buttonHLColor.y, buttonHLColor.z, buttonHLColor.w));
-        nvgFillPaint(vg, bg);
-        nvgFill(vg);
 
         if (attrib.labels.size() > i)
         {
-            nvgTextAlign(vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-            nvgFontSize(vg, buttonRegion.Height() * .5f);
-            nvgFontFace(vg, "sans");
-            nvgFillColor(vg, nvgRGBAf(node_buttonTextColor.x, node_buttonTextColor.y, node_buttonTextColor.z, node_buttonTextColor.w));
-            nvgText(vg, buttonRegion.Center().x, buttonRegion.Center().y + 1, attrib.labels[i].c_str(), nullptr);
+            m_canvas.Text(buttonRegion.Center() + NVec2f(0, 1), buttonRegion.Height() * .5f, node_buttonTextColor, attrib.labels[i].c_str());
         }
     }
 }
 
 NRectf GraphView::DrawNode(const NRectf& pos, Node* pNode)
 {
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, pos.Left(), pos.Top(), pos.Width(), pos.Height(), node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(node_Color.x, node_Color.y, node_Color.z, node_Color.w));
-    nvgFill(vg);
+    m_canvas.FillRoundedRect(pos, node_borderRadius, node_Color);
 
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, pos.Left() + node_titleBorder, pos.Top() + node_titleBorder, pos.Width() - node_titleBorder * 2.0f, node_titleHeight, node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(node_TitleBGColor.x, node_TitleBGColor.y, node_TitleBGColor.z, node_TitleBGColor.w));
-    nvgFill(vg);
+    m_canvas.FillRoundedRect(NRectf(pos.Left() + node_titleBorder, pos.Top() + node_titleBorder, pos.Width() - node_titleBorder * 2.0f, node_titleHeight), node_borderRadius, node_TitleBGColor);
 
-    nvgFontSize(vg, node_titleFontSize);
-    nvgFontFace(vg, "sans");
-    nvgFillColor(vg, nvgRGBAf(node_TitleColor.x, node_TitleColor.y, node_TitleColor.z, node_TitleColor.w));
-    nvgTextAlign(vg, NVG_ALIGN_MIDDLE | NVG_ALIGN_CENTER);
-    nvgText(vg, pos.Left() + pos.Width() / 2.0f, pos.Top() + node_titleBorder + node_titleHeight * .5f, pNode->GetName().c_str(), nullptr);
+    m_canvas.Text(NVec2f(pos.Center().x, pos.Top() + node_titleBorder + node_titleHeight * .5f), node_titleFontSize, node_TitleColor, pNode->GetName().c_str());
 
     auto contentRect = NRectf(pos.Left() + node_borderPad, pos.Top() + node_titleBorder + node_titleHeight + node_borderPad, pos.Width() - (node_borderPad * 2), pos.Height() - node_titleHeight - (node_titleBorder * 2.0f) - node_borderPad);
 
-    /* Content Fill
-    nvgBeginPath(vg);
-    nvgRoundedRect(vg, contentRect.Left(), contentRect.Top(), contentRect.Width(), contentRect.Height(), node_borderRadius);
-    nvgFillColor(vg, nvgRGBAf(node_TitleBGColor.x, node_TitleBGColor.y, node_TitleBGColor.z, node_TitleBGColor.w));
-    nvgFill(vg);
-    */
     return contentRect;
 }
 
-void GraphView::Show(const glm::ivec2& displaySize)
+void GraphView::Show(const NVec2i& displaySize)
 {
     BuildNodes();
 
+    m_canvas.SetPixelRect(NRectf(0, 0, (float)displaySize.x, (float)displaySize.y));
+    m_canvas.Update();
+
     nvgBeginFrame(vg, float(displaySize.x), float(displaySize.y), 1.0f);
 
-    glm::vec2 currentPos(10.0f, 10.0f);
-    glm::vec4 nodeColor(.5f, .5f, .5f, 1.0f);
-    glm::vec4 pinBGColor(.2f, .2f, .2f, 1.0f);
-    glm::vec4 nodeTitleBGColor(0.3f, .3f, 0.3f, 1.0f);
+    NVec2f currentPos(10.0f, 10.0f);
+    NVec4f nodeColor(.5f, .5f, .5f, 1.0f);
+    NVec4f pinBGColor(.2f, .2f, .2f, 1.0f);
+    NVec4f nodeTitleBGColor(0.3f, .3f, 0.3f, 1.0f);
     float nodeGap = 10.0f;
 
     float maxHeightNode = 0.0f;
@@ -665,7 +594,7 @@ void GraphView::Show(const glm::ivec2& displaySize)
         gridSize.x *= pWorld->GetGridScale().x;
         gridSize.y *= pWorld->GetGridScale().y;
 
-        glm::vec2 nodeSize;
+        NVec2f nodeSize;
         nodeSize.x = gridSize.x * node_gridScale;
         nodeSize.y = (gridSize.y * node_gridScale) + node_titleHeight + node_titleBorder;
 
@@ -697,17 +626,9 @@ void GraphView::Show(const glm::ivec2& displaySize)
                 cellSize.y * pinGrid.Height());
             pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, /*-node_borderPad*/ 0.0f);
 
-            //Backpad
-            /*
-            nvgBeginPath(vg);
-            nvgRoundedRect(vg, pinCell.Left(), pinCell.Top(), pinCell.Width(), pinCell.Height(), node_borderRadius);
-            nvgFillColor(vg, nvgRGBAf(pinBGColor.x, pinBGColor.y, pinBGColor.z, pinBGColor.w));
-            nvgFill(vg);
-            */
-
             if (pInput->GetAttributes().ui == ParameterUI::Knob)
             {
-                DrawKnob(glm::vec2(pinCell.Center().x, pinCell.Center().y), std::min(pinCell.Width(), pinCell.Height()) - node_pinPad * 2.0f, *pInput);
+                DrawKnob(NVec2f(pinCell.Center().x, pinCell.Center().y), std::min(pinCell.Width(), pinCell.Height()) - node_pinPad * 2.0f, *pInput);
             }
             else if (pInput->GetAttributes().ui == ParameterUI::Slider)
             {
@@ -738,10 +659,7 @@ void GraphView::Show(const glm::ivec2& displaySize)
                 cellSize.y * custom.Height());
             cell.Adjust(node_borderPad, node_borderPad, -node_borderPad, /*-node_borderPad*/ 0.0f);
 
-            nvgBeginPath(vg);
-            nvgRoundedRect(vg, cell.Left(), cell.Top(), cell.Width(), cell.Height(), node_borderRadius);
-            nvgFillColor(vg, nvgRGBAf(pinBGColor.x, pinBGColor.y, pinBGColor.z, pinBGColor.w));
-            nvgFill(vg);
+            m_canvas.FillRoundedRect(cell, node_borderRadius, pinBGColor);
 
             pWorld->DrawCustom(*this, vg, cell);
         }
