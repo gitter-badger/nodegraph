@@ -3,7 +3,6 @@
 #include "nodegraph/view/graphview.h"
 #include "nodegraph/view/viewnode.h"
 
-#include <imgui/imgui.h>
 #include <nanovg/nanovg.h>
 
 #include <magic_enum/magic_enum.hpp>
@@ -20,7 +19,7 @@ NVec4f node_TitleColor(1.0f, 1.0f, 1.0f, 1.0f);
 NVec4f node_TitleBGColor(0.4f, .4f, 0.4f, 1.0f);
 NVec4f node_buttonTextColor(0.15f, .15f, 0.15f, 1.0f);
 
-NVec4f node_shadowColor(0.1f, 0.1f, 0.1f, .5f);
+NVec4f node_shadowColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 float node_shadowSize = 2.0f;
 float node_borderRadius = 7.0f;
@@ -82,32 +81,20 @@ void GraphView::BuildNodes()
     }
 }
 
-/*
-            mouseOn = true;
-
-            if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
-            {
-        bool mouseOn = false;
-           if (ImGui::GetMousePos().x > (pos.x - knobSize * .5)&&
-            ImGui::GetMousePos().x < (pos.x + knobSize * .5) &&
-            ImGui::GetMousePos().y > (pos.y - knobSize * .5) &&
-            ImGui::GetMousePos().y < (pos.y + knobSize * .5))
-        {
-        */
-
 bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover)
 {
     auto pos = m_canvas.GetViewMousePos();
     bool overParam = region.Contains(NVec2f(pos.x, pos.y));
+    auto const& state = m_canvas.GetInputState();
 
-    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+    if (state.buttonReleased[MOUSE_LEFT])
     {
         m_pCaptureParam = nullptr;
     }
 
     if (m_pCaptureParam == nullptr)
     {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        if (state.buttonClicked[MOUSE_LEFT])
         {
             if (overParam)
             {
@@ -130,7 +117,8 @@ bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover
         hover = false;
     }
 
-    ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = (m_pCaptureParam != nullptr);
+    m_canvas.Capture(m_pCaptureParam != nullptr);
+
     m_hideCursor = m_pCaptureParam != nullptr;
     return m_pCaptureParam == &param;
 }
@@ -143,7 +131,9 @@ void GraphView::EvaluateDragDelta(Pin& param, float rangePerDelta, InputDirectio
     const float fRange = fMax - fMin;
     float fCurrentVal = (float)param.Normalized();
 
-    auto d = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+    auto const& state = m_canvas.GetInputState();
+
+    auto d = state.dragDelta;
     float delta = (dir == InputDirection::X ? d.x : d.y);
 
     float fStep = (float)param.NormalizedStep();
@@ -177,7 +167,7 @@ void GraphView::EvaluateDragDelta(Pin& param, float rangePerDelta, InputDirectio
 
         if (resetDrag)
         {
-            ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+            m_canvas.ResetDragDelta();
         }
     }
 }
@@ -197,8 +187,7 @@ void GraphView::CheckInput(Pin& param, const NRectf& region, float rangePerDelta
 
 void GraphView::DrawLabel(Parameter& param, const NVec2f& pos)
 {
-    NVec4f colorLabel(0.30f, 0.30f, 0.30f, 1.0f);
-    NVec4f channelColor(0.38f, 0.38f, 0.38f, 1.0f);
+    NVec4f colorLabel(0.20f, 0.20f, 0.20f, 1.0f);
     NVec4f fontColor(.95f, .95f, .95f, 1.0f);
     std::string val;
 
@@ -234,9 +223,9 @@ void GraphView::DrawLabel(Parameter& param, const NVec2f& pos)
 
     float fontSize = 24.0f;
     NRectf rcFont = m_canvas.TextBounds(pos, fontSize, val.c_str());
-    //rcFont.Adjust(-rcFont.Width() / 2, -rcFont.Height() / 2);
 
     NRectf rcBounds = rcFont;
+    rcBounds.Adjust(-node_labelPad, -node_labelPad, node_labelPad, node_labelPad);
     rcFont.Adjust(-node_labelPad, -node_labelPad, node_labelPad, node_labelPad);
 
     auto rcShadow = rcBounds;
@@ -362,7 +351,7 @@ bool GraphView::DrawKnob(NVec2f pos, float knobSize, Pin& param)
 
     if ((captured || hover) && (param.GetAttributes().displayType != ParameterDisplayType::None))
     {
-        m_drawLabels[&param] = NVec2f(pos.x, pos.y - knobSize * 2.0f);
+        m_drawLabels[&param] = NVec2f(pos.x, pos.y - knobSize * 2.25f);
     }
     return false;
 }
@@ -439,6 +428,10 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 
     ret.thumb = thumbRect;
 
+    if ((captured || hover) && (param.GetAttributes().displayType != ParameterDisplayType::None))
+    {
+        m_drawLabels[&param] = NVec2f(thumbRect.Center().x, thumbRect.Top() - node_titleFontSize);
+    }
     return ret;
 };
 
@@ -475,12 +468,13 @@ void GraphView::DrawButton(NRectf region, Pin& param)
 
     auto mousePos = m_canvas.GetViewMousePos();
 
+    auto const& state = m_canvas.GetInputState();
     for (int i = 0; i < numButtons; i++)
     {
         auto buttonRegion = NRectf(region.Left() + i * (buttonWidth + node_buttonPad), region.Top(), buttonWidth, region.Height());
 
         bool overButton = buttonRegion.Contains(NVec2f(mousePos.x, mousePos.y));
-        if (overButton && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        if (overButton && state.buttonClicked[MOUSE_LEFT])
         {
             if (canDisable && currentButton == i)
             {
@@ -673,141 +667,6 @@ void GraphView::Show(const NVec2i& displaySize)
 
     nvgEndFrame(vg);
 
-    /*if (ImGui::Begin("ImNodes", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-    {
-
-        ImGui::End();
-    }
-    */
-
-    /*
-    // Canvas must be created after ImGui initializes, because constructor accesses ImGui style to configure default colors.
-    static ImNodes::CanvasState canvas{};
-
-    // I think it is probably better to just keep node * and copy everything else into the view.
-    // For now, use a lock to gain access to the nodes
-    std::lock_guard<MUtilsLockableBase(std::mutex)> guard(m_graph.GetMutex());
-
-    const ImGuiStyle& style = ImGui::GetStyle();
-    if (ImGui::Begin("ImNodes", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-    {
-        // We probably need to keep some state, like positions of nodes/slots for rendering connections.
-        ImNodes::BeginCanvas(&canvas);
-
-        for (auto it = m_viewNodes.begin(); it != m_viewNodes.end();)
-        {
-            auto node = (*it).get();
-
-            // Start rendering node
-            if (ImNodes::Ez::BeginNode(node, node->pModelNode->GetName().c_str(), &node->pos, &node->selected))
-            {
-                // Render input nodes first (order is important)
-                ImNodes::Ez::InputSlots(node->input_slots.data(), (int)node->input_slots.size());
-
-                // Custom node content may go here
-                /*float fValue = 1.0f;
-                ImGui::InputFloat("Level", &fValue );
-                */
-
-    /*
-                            // Render output nodes first (order is important)
-                            ImNodes::Ez::OutputSlots(node->output_slots.data(), (int)node->output_slots.size());
-
-                            // Store new connections when they are created
-                            Connection new_connection;
-                            if (ImNodes::GetNewConnection(&new_connection.input_node, &new_connection.input_slot,
-                                &new_connection.output_node, &new_connection.output_slot))
-                            {
-                                ((ViewNode*)new_connection.input_node)->connections.push_back(new_connection);
-                                ((ViewNode*)new_connection.output_node)->connections.push_back(new_connection);
-                            }
-
-                            // Render output connections of this node
-                            for (const Connection& connection : node->connections)
-                            {
-                                // Node contains all it's connections (both from output and to input slots). This means that multiple
-                                // nodes will have same connection. We render only output connections and ensure that each connection
-                                // will be rendered once.
-                                if (connection.output_node != node)
-                                    continue;
-
-                                if (!ImNodes::Connection(connection.input_node, connection.input_slot, connection.output_node,
-                                    connection.output_slot))
-                                {
-                                    // Remove deleted connections
-                                    ((ViewNode*)connection.input_node)->DeleteConnection(connection);
-                                    ((ViewNode*)connection.output_node)->DeleteConnection(connection);
-                                }
-                            }
-                        }
-                        // Node rendering is done. This call will render node background based on size of content inside node.
-                        ImNodes::Ez::EndNode();
-
-                        /*
-                        if (node->selected && ImGui::IsKeyPressedMap(ImGuiKey_Delete))
-                        {
-                            for (auto& connection : node->connections)
-                            {
-                                ((ViewNode*)connection.input_node)->DeleteConnection(connection);
-                                ((ViewNode*)connection.output_node)->DeleteConnection(connection);
-                            }
-                            delete node;
-                            it = m_viewNodes.erase(it);
-                        }
-                        else
-                        */
-    //++it;
-    /*}
-
-                const ImGuiIO& io = ImGui::GetIO();
-                if (ImGui::IsMouseReleased(1) && ImGui::IsWindowHovered() && !ImGui::IsMouseDragging(1))
-                {
-                    ImGui::FocusWindow(ImGui::GetCurrentWindow());
-                    ImGui::OpenPopup("NodesContextMenu");
-                }
-
-                if (ImGui::BeginPopup("NodesContextMenu"))
-                {
-                    /*
-                    for (const auto& desc : available_nodes)
-                    {
-                        if (ImGui::MenuItem(desc.first.c_str()))
-                        {
-                            nodes.push_back(desc.second());
-                            ImNodes::AutoPositionNode(nodes.back());
-                        }
-                    }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Reset Zoom"))
-                        canvas.zoom = 1;
-
-                    if (ImGui::IsAnyMouseDown() && !ImGui::IsWindowHovered())
-                        ImGui::CloseCurrentPopup();
-                    ImGui::EndPopup();
-                }
-
-                ImNodes::EndCanvas();
-            */
 }
-
-/*
-std::map<std::string, MyNode*(*)()> available_nodes{
-    {"Oscillator", []() -> MyNode* { return new MyNode("Oscillator", {
-        {"Input", NodeSlotPosition},    {"Frequency", NodeSlotRotation}  // Input slots
-    }, {
-        {"Output", NodeSlotMatrix}                                      // Output slots
-    }); }},
-    {"ADSR", []() -> MyNode* { return new MyNode("ADSR", {
-        {"Input", NodeSlotMatrix}                                      // Input slots
-    }, {
-        {"Output", NodeSlotPosition}  // Output slots
-    }); }},
-    {"Chorus", []() -> MyNode* { return new MyNode("Chorus", {
-        {"Input", NodeSlotPosition}
-    }, {
-        {"Output", NodeSlotMatrix}                                      // Output slots
-    }); }},
-};
-*/
 
 } // namespace NodeGraph

@@ -1,5 +1,4 @@
 #include "nodegraph/view/canvas.h"
-#include <imgui/imgui.h>
 
 using namespace MUtils;
 
@@ -11,33 +10,33 @@ const NVec2f Canvas::PixelToView(const NVec2f& pixel) const
     return  (m_viewOrigin + (pixel/ m_viewScale));
 }
 
-void Canvas::Update(const NVec2f& size, const NVec2f& mousePos)
+void Canvas::Update(const NVec2f& size, const CanvasInputState& state)
 {
-    m_mousePos = mousePos;
+    m_inputState = state;
 
     SetPixelRect(NRectf(0, 0, size.x, size.y));
 
     // Handle the mouse
-    if (ImGui::GetIO().WantCaptureMouse)
+    if (state.canCapture)
     {
-        auto viewUnderMouse = PixelToView(NVec2f(mousePos.x, mousePos.y));
+        auto viewUnderMouse = GetViewMousePos();
 
-        float wheel = ImGui::GetIO().MouseWheel;
+        float wheel = state.wheelDelta;
         if (wheel != 0.0f)
         {
             m_viewScale += wheel * (std::fabs(m_viewScale) * .1f);
             m_viewScale = std::clamp(m_viewScale, 0.1f, 10.0f);
        
-            auto newView = PixelToView(NVec2f(mousePos.x, mousePos.y));
+            auto newView = GetViewMousePos();
             auto diff = newView - viewUnderMouse;
             m_viewOrigin -= diff;
         }
-        else if (ImGui::GetIO().MouseDown[1] &&
-            (ImGui::GetIO().MouseDelta.x != 0 ||
-            ImGui::GetIO().MouseDelta.y != 0))
+        else if (state.buttonDown[1] &&
+            (state.mouseDelta.x != 0 ||
+            state.mouseDelta.y != 0))
         {
             auto viewOrigin = PixelToView(NVec2f(0.0f, 0.0f));
-            auto viewDelta = PixelToView(NVec2f(ImGui::GetIO().MouseDelta.x, ImGui::GetIO().MouseDelta.y));
+            auto viewDelta = PixelToView(NVec2f(state.mouseDelta.x, state.mouseDelta.y));
             m_viewOrigin -= (viewDelta - viewOrigin);
         }
     }

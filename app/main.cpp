@@ -1,4 +1,6 @@
 #include <mutils/logger/logger.h>
+
+#include <mutils/math/imgui_glm.h>
 #include <mutils/ui/sdl_imgui_starter.h>
 
 #include "config_app.h"
@@ -76,14 +78,14 @@ public:
 
         // Sum
         if (pValue9)
-            pValue9->SetViewCells(NRectf(4, 2, 1, 1));
+            pValue9->SetViewCells(NRectf(4, 1, 1, 1));
         if (pValue1)
-            pValue1->SetViewCells(NRectf(5, 2, 1, 1));
+            pValue1->SetViewCells(NRectf(5, 1, 1, 1));
         if (pSum)
-            pSum->SetViewCells(NRectf(3, 2, 1, 1));
+            pSum->SetViewCells(NRectf(3, 1, 1, 1));
 
-        pSlider->SetViewCells(NRectf(.25f, 2, 2.5f, .5f));
-        pButton->SetViewCells(NRectf(.25f, 2.5, 2.5f, .5f));
+        pSlider->SetViewCells(NRectf(.25f, 1, 2.5f, .5f));
+        pButton->SetViewCells(NRectf(.25f, 1.5, 2.5f, .5f));
     }
 
     virtual void Compute() override
@@ -181,24 +183,55 @@ public:
         }
     }
 
+    void BeginCanvas(const NRectf& region)
+    {
+        auto mousePos = ImGui::GetIO().MousePos;
+
+        CanvasInputState state;
+        state.mousePos = NVec2f(mousePos.x - region.Left(), mousePos.y - region.Top());
+        for (uint32_t i = 0; i < MOUSE_MAX; i++)
+        {
+            state.buttonClicked[i] = ImGui::GetIO().MouseClicked[i];
+            state.buttonReleased[i] = ImGui::GetIO().MouseReleased[i];
+            state.buttonDown[i] = ImGui::GetIO().MouseDown[i];
+        }
+        state.canCapture = ImGui::GetIO().WantCaptureMouse;
+        state.mouseDelta = ImGui::GetIO().MouseDelta;
+        state.dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+        state.wheelDelta = ImGui::GetIO().MouseWheel;
+        state.resetDrag = false;
+        state.captured = false;
+
+        spCanvas->Update(region.Size(), state);
+    }
+
+    void EndCanvas()
+    {
+        ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = (spCanvas->GetInputState().captured);
+        if (spCanvas->GetInputState().resetDrag)
+        {
+            ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+        }
+    }
+
     virtual void DrawGUI(const NVec2i& displaySize) override
     {
         m_displaySize = displaySize;
 
         ImGui::Begin("Canvas");
 
-        auto mousePos = ImGui::GetIO().MousePos;
         ImVec2 pos = ImGui::GetCursorScreenPos();
         NRectf region = NRectf(pos.x, pos.y, ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
-        NVec2i mousePosCanvas = NVec2f(mousePos.x - region.Left(), mousePos.y - region.Top());
-
-        spCanvas->Update(region.Size(), mousePosCanvas);
+        BeginCanvas(region);
 
         DrawGraph(region.Size());
 
         ImGui::Image(*(ImTextureID*)&fboTexture, ImVec2(region.Width(), region.Height()), ImVec2(0, 1), ImVec2(1, 0));
 
         ImGui::End();
+
+        EndCanvas();
+
     }
 
     virtual AppStarterSettings& GetSettings() override
