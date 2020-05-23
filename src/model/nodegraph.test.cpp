@@ -4,12 +4,12 @@
 
 using namespace NodeGraph;
 
-class AdderNode : public Node
+class TestNode : public Node
 {
 public:
-    DECLARE_NODE(AdderNode, adder);
+    DECLARE_NODE(TestNode, adder);
 
-    AdderNode(Graph& graph)
+    TestNode(Graph& graph)
         : Node(graph, "Adder")
     {
         pSum = AddOutput("Sum", .0f);
@@ -72,7 +72,7 @@ TEST_CASE("NodeGraph.Parameters", "[Parameters]")
 TEST_CASE("NodeGraph.Nodes", "[Nodes]")
 {
     Graph g;
-    auto pNode = g.CreateNode<AdderNode>();
+    auto pNode = g.CreateNode<TestNode>();
 
     pNode->pValue1->SetAttributes(ParameterAttributes(ParameterUI::Knob, 0.0f, 1.0f));
     pNode->pValue2->SetAttributes(ParameterAttributes(ParameterUI::Knob, -1.0f, 1.0f));

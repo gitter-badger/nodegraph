@@ -17,13 +17,13 @@ using namespace MUtils;
 using namespace NodeGraph;
 
 #undef ERROR
-class AdderNode : public Node
+class TestNode : public Node
 {
 public:
-    DECLARE_NODE(AdderNode, adder);
+    DECLARE_NODE(TestNode, adder);
 
-    AdderNode(Graph& graph)
-        : Node(graph, "Adder")
+    TestNode(Graph& graph)
+        : Node(graph, "UI Test")
     {
         pSum = AddOutput("Sumf", .0f, ParameterAttributes(ParameterUI::Knob, 0.0f, 1.0f));
         pSum->GetAttributes().flags |= ParameterFlags::ReadOnly;
@@ -121,10 +121,10 @@ public:
         settings.appName = "NodeGraph Test";
 
         appNodes.push_back(graph.CreateNode<EmptyNode>("Empty Node"));
-        appNodes.push_back(graph.CreateNode<AdderNode>());
-        appNodes.push_back(graph.CreateNode<AdderNode>());
-        appNodes.push_back(graph.CreateNode<AdderNode>());
-        appNodes.push_back(graph.CreateNode<AdderNode>());
+        appNodes.push_back(graph.CreateNode<TestNode>());
+        appNodes.push_back(graph.CreateNode<TestNode>());
+        appNodes.push_back(graph.CreateNode<TestNode>());
+        appNodes.push_back(graph.CreateNode<TestNode>());
     }
 
     // Inherited via IAppStarterClient
@@ -159,7 +159,7 @@ public:
 
     virtual void Destroy() override
     {
-        DestroyFBO();
+        fbo_destroy(fbo);
     }
 
     virtual void Draw(const NVec2i& displaySize) override
@@ -170,16 +170,20 @@ public:
     {
         if (spGraphView)
         {
-            ResizeFBO(canvasSize);
+            if (fbo.fbo == 0)
+            {
+                fbo = fbo_create();
+            }
+            fbo_resize(fbo, canvasSize);
 
-            BindFBO();
+            fbo_bind(fbo);
 
-            Clear(settings.clearColor);
+            sdl_imgui_clear(settings.clearColor);
 
             spGraphView->Show(canvasSize);
             graph.Compute(appNodes, 0);
 
-            UnBindFBO();
+            fbo_unbind(fbo, m_displaySize);
         }
     }
 
@@ -226,7 +230,7 @@ public:
 
         DrawGraph(region.Size());
 
-        ImGui::Image(*(ImTextureID*)&fboTexture, ImVec2(region.Width(), region.Height()), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(*(ImTextureID*)&fbo.fboTexture, ImVec2(region.Width(), region.Height()), ImVec2(0, 1), ImVec2(1, 0));
 
         ImGui::End();
 
@@ -239,95 +243,13 @@ public:
         return settings;
     }
 
-    void BindFBO()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glViewport(0, 0, (int)fboSize.x, (int)fboSize.y);
-    }
-
-    void UnBindFBO()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, (int)m_displaySize.x, (int)m_displaySize.y);
-    }
-
-    void CreateFBO()
-    {
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-        // The texture we're going to render to
-        glGenTextures(1, &fboTexture);
-
-        // "Bind" the newly created texture : all future texture functions will modify this texture
-        glBindTexture(GL_TEXTURE_2D, fboTexture);
-
-        glGenRenderbuffers(1, &fboDepth);
-    }
-
-    void Clear(const NVec4f& color)
-    {
-        glClearColor(color.x, color.y, color.z, color.w);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
-    void ResizeFBO(const NVec2i& newFboSize)
-    {
-        if (fboSize == newFboSize)
-        {
-            return;
-        }
-
-        if (fbo == 0)
-        {
-            CreateFBO();
-        }
-
-        fboSize = newFboSize;
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glBindTexture(GL_TEXTURE_2D, fboTexture);
-
-        // Give an empty image to OpenGL ( the last "0" )
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fboSize.x, fboSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fboTexture, 0);
-
-        glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fboSize.x, fboSize.y);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
-
-        // Set the list of draw buffers.
-        GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-        glDrawBuffers(1, DrawBuffers);
-
-        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE)
-        {
-            LOG(ERROR) << "FBO Error: " << status;
-        }
-    }
-
-    void DestroyFBO()
-    {
-        glDeleteFramebuffers(1, &fbo);
-        glDeleteRenderbuffers(1, &fboDepth);
-        glDeleteTextures(1, &fboTexture);
-    }
-
 private:
     std::shared_ptr<NodeGraph::GraphView> spGraphView;
     std::shared_ptr<NodeGraph::Canvas> spCanvas;
     NodeGraph::Graph graph;
     AppStarterSettings settings;
     NVGcontext* vg = nullptr;
-    GLuint fbo = 0;
-    GLuint fboTexture = 0;
-    GLuint fboDepth = 0;
-    NVec2i fboSize;
+    MUtils::AppFBO fbo;
     NVec2i m_displaySize = 0;
 };
 
