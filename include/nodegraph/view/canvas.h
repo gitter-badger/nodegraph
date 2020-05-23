@@ -67,6 +67,8 @@ public:
 
     virtual MUtils::NRectf TextBounds(const MUtils::NVec2f& pos, float size, const char* pszText) const = 0;
 
+    virtual void DrawGrid(float viewStep) = 0;
+
     enum TextAlign
     {
         TEXT_ALIGN_MIDDLE = 1,
@@ -87,7 +89,7 @@ public:
     void ResetDragDelta() { m_inputState.resetDrag = true; }
     void Capture(bool cap) { m_inputState.captured = cap; }
 
-private:
+protected:
     Graph& m_graph;
     MUtils::NRectf m_pixelRect; // Pixel size on screen of canvas
 
@@ -127,6 +129,8 @@ public:
     virtual void Stroke(const MUtils::NVec2f& from, const MUtils::NVec2f& to, float width, const MUtils::NVec4f& color) override;
 
     virtual void Arc(const MUtils::NVec2f& pos, float radius, float width, const MUtils::NVec4f& color, float startAngle, float endAngle) override;
+
+    virtual void DrawGrid(float viewStep);
 
 private:
     NVGcontext* vg = nullptr;

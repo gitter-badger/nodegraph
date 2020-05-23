@@ -7,7 +7,7 @@ namespace NodeGraph
 
 const NVec2f Canvas::PixelToView(const NVec2f& pixel) const
 {
-    return  (m_viewOrigin + (pixel/ m_viewScale));
+    return (m_viewOrigin + (pixel / m_viewScale));
 }
 
 void Canvas::Update(const NVec2f& size, const CanvasInputState& state)
@@ -26,14 +26,12 @@ void Canvas::Update(const NVec2f& size, const CanvasInputState& state)
         {
             m_viewScale += wheel * (std::fabs(m_viewScale) * .1f);
             m_viewScale = std::clamp(m_viewScale, 0.1f, 10.0f);
-       
+
             auto newView = GetViewMousePos();
             auto diff = newView - viewUnderMouse;
             m_viewOrigin -= diff;
         }
-        else if (state.buttonDown[1] &&
-            (state.mouseDelta.x != 0 ||
-            state.mouseDelta.y != 0))
+        else if (state.buttonDown[1] && (state.mouseDelta.x != 0 || state.mouseDelta.y != 0))
         {
             auto viewOrigin = PixelToView(NVec2f(0.0f, 0.0f));
             auto viewDelta = PixelToView(NVec2f(state.mouseDelta.x, state.mouseDelta.y));
@@ -179,8 +177,7 @@ void CanvasVG::Text(const NVec2f& pos, float size, const NVec4f& color, const ch
 {
     auto viewSize = WorldSizeToViewSizeY(size);
     auto viewPos = ViewToPixels(pos);
-    nvgTextAlign(vg, (align & Canvas::TEXT_ALIGN_MIDDLE ? NVG_ALIGN_MIDDLE : NVG_ALIGN_TOP) |
-       (align & Canvas::TEXT_ALIGN_CENTER ? NVG_ALIGN_CENTER : NVG_ALIGN_LEFT));
+    nvgTextAlign(vg, (align & Canvas::TEXT_ALIGN_MIDDLE ? NVG_ALIGN_MIDDLE : NVG_ALIGN_TOP) | (align & Canvas::TEXT_ALIGN_CENTER ? NVG_ALIGN_CENTER : NVG_ALIGN_LEFT));
     nvgFontSize(vg, viewSize);
     if (pszFace == nullptr)
     {
@@ -204,6 +201,30 @@ void CanvasVG::Arc(const NVec2f& pos, float radius, float width, const NVec4f& c
     nvgArc(vg, viewPos.x, viewPos.y, viewRadius, nvgDegToRad(startAngle), nvgDegToRad(endAngle), NVG_CW);
     nvgStrokeWidth(vg, viewWidth);
     nvgStroke(vg);
+}
+
+void CanvasVG::DrawGrid(float viewStep)
+{
+    auto startPos = m_viewOrigin;
+    startPos.x = std::floor(m_viewOrigin.x / viewStep) * viewStep;
+    startPos.y = std::floor(m_viewOrigin.y / viewStep) * viewStep;
+
+    auto size = (NVec2f(1.0f) / m_viewScale);
+
+    nvgShapeAntiAlias(vg, 0);
+    while (startPos.x < PixelToView(m_pixelRect.Size()).x)
+    {
+        Stroke(NVec2f(startPos.x, startPos.y), NVec2f(startPos.x, PixelToView(m_pixelRect.Size()).y), size.x, NVec4f(.9f, .9f, .9f, 0.05f));
+        startPos.x += viewStep;
+    }
+    
+    startPos.x = std::floor(m_viewOrigin.x / viewStep) * viewStep;
+    while (startPos.y < PixelToView(m_pixelRect.Size()).y)
+    {
+        Stroke(NVec2f(startPos.x, startPos.y), NVec2f(PixelToView(m_pixelRect.Size()).x, startPos.y), size.y, NVec4f(.9f, .9f, .9f, 0.05f));
+        startPos.y += viewStep;
+    }
+    nvgShapeAntiAlias(vg, 1);
 }
 
 } // namespace NodeGraph

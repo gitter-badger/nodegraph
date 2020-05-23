@@ -548,7 +548,9 @@ void GraphView::Show(const NVec2i& displaySize)
 
     nvgBeginFrame(vg, float(displaySize.x), float(displaySize.y), 1.0f);
 
-    NVec2f currentPos(10.0f, 10.0f);
+    m_canvas.DrawGrid(node_gridScale);
+
+    NVec2f currentPos(node_borderPad, node_borderPad);
     NVec4f nodeColor(.5f, .5f, .5f, 1.0f);
     NVec4f pinBGColor(.2f, .2f, .2f, 1.0f);
     NVec4f nodeTitleBGColor(0.3f, .3f, 0.3f, 1.0f);
@@ -587,13 +589,13 @@ void GraphView::Show(const NVec2i& displaySize)
         gridSize.y *= pWorld->GetGridScale().y;
 
         NVec2f nodeSize;
-        nodeSize.x = gridSize.x * node_gridScale;
+        nodeSize.x = gridSize.x * node_gridScale - node_borderPad * 2.0f;
         nodeSize.y = (gridSize.y * node_gridScale) + node_titleHeight + node_titleBorder;
 
         if ((currentPos.x + nodeSize.x) > displaySize.x)
         {
-            currentPos.x = 10.0f;
-            currentPos.y += maxHeightNode;
+            currentPos.x = node_borderPad;
+            currentPos.y += maxHeightNode + node_borderPad;
             maxHeightNode = 0.0f;
         }
 

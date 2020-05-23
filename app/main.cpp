@@ -62,19 +62,19 @@ public:
         pButton->SetAttributes(buttonAttrib);
 
         if (pValue2)
-            pValue2->SetViewCells(NRectf(1, 0, 1, 1));
+            pValue2->SetViewCells(NRectf(0, 0, 1, 1));
         if (pValue3)
-            pValue3->SetViewCells(NRectf(2, 0, 1, 1));
+            pValue3->SetViewCells(NRectf(1, 0, 1, 1));
         if (pValue4)
-            pValue4->SetViewCells(NRectf(3, 0, 1, 1));
+            pValue4->SetViewCells(NRectf(2, 0, 1, 1));
         if (pValue5)
-            pValue5->SetViewCells(NRectf(4, 0, 1, 1));
+            pValue5->SetViewCells(NRectf(3, 0, 1, 1));
         if (pValue6)
-            pValue6->SetViewCells(NRectf(5, 0, 1, 1));
+            pValue6->SetViewCells(NRectf(4, 0, 1, 1));
         if (pValue7)
-            pValue7->SetViewCells(NRectf(6, 0, 1, 1));
+            pValue7->SetViewCells(NRectf(5, 0, 1, 1));
         if (pValue8)
-            pValue8->SetViewCells(NRectf(7, 0, 1, 1));
+            pValue8->SetViewCells(NRectf(6, 0, 1, 1));
 
         // Sum
         if (pValue9)
