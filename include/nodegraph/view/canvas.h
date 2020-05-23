@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <mutils/math/math.h>
 
 #include <nanovg/nanovg.h>
