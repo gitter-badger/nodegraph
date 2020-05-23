@@ -97,7 +97,7 @@ void GraphView::BuildNodes()
 
 bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover)
 {
-    auto pos = ImGui::GetMousePos();
+    auto pos = m_canvas.GetViewMousePos();
     bool overParam = region.Contains(NVec2f(pos.x, pos.y));
 
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
@@ -130,6 +130,7 @@ bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover
         hover = false;
     }
 
+    ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = (m_pCaptureParam != nullptr);
     m_hideCursor = m_pCaptureParam != nullptr;
     return m_pCaptureParam == &param;
 }
@@ -472,7 +473,7 @@ void GraphView::DrawButton(NRectf region, Pin& param)
     float buttonWidth = region.Width() / numButtons;
     buttonWidth -= node_buttonPad;
 
-    auto mousePos = ImGui::GetMousePos();
+    auto mousePos = m_canvas.GetViewMousePos();
 
     for (int i = 0; i < numButtons; i++)
     {
@@ -550,9 +551,6 @@ NRectf GraphView::DrawNode(const NRectf& pos, Node* pNode)
 void GraphView::Show(const NVec2i& displaySize)
 {
     BuildNodes();
-
-    m_canvas.SetPixelRect(NRectf(0, 0, (float)displaySize.x, (float)displaySize.y));
-    m_canvas.Update();
 
     nvgBeginFrame(vg, float(displaySize.x), float(displaySize.y), 1.0f);
 

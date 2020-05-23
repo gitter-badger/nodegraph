@@ -187,8 +187,12 @@ public:
 
         ImGui::Begin("Canvas");
 
+        auto mousePos = ImGui::GetIO().MousePos;
         ImVec2 pos = ImGui::GetCursorScreenPos();
         NRectf region = NRectf(pos.x, pos.y, ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
+        NVec2i mousePosCanvas = NVec2f(mousePos.x - region.Left(), mousePos.y - region.Top());
+
+        spCanvas->Update(region.Size(), mousePosCanvas);
 
         DrawGraph(region.Size());
 

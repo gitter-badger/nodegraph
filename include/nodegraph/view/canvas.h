@@ -17,13 +17,12 @@ public:
     {}
 
     const MUtils::NVec2f PixelToView(const MUtils::NVec2f& pixel) const; 
-    const MUtils::NVec2f ViewToPixel(const MUtils::NVec2f& pixel) const; 
 
-    virtual MUtils::NVec2f WorldToView(const MUtils::NVec2f& pos) const;
-    virtual MUtils::NRectf WorldToView(const MUtils::NRectf& rc) const ;
+    virtual MUtils::NVec2f ViewToPixels(const MUtils::NVec2f& pos) const;
+    virtual MUtils::NRectf ViewToPixels(const MUtils::NRectf& rc) const ;
     virtual float WorldSizeToViewSizeX(float size) const;
     virtual float WorldSizeToViewSizeY(float size) const;
-    virtual MUtils::NVec2f WorldSizeToViewSize(const MUtils::NVec2f& size) const;
+    virtual MUtils::NVec2f ViewSizeToPixelSize(const MUtils::NVec2f& size) const;
 
     void SetPixelRect(const MUtils::NRectf& rc);
     MUtils::NRectf GetPixelRect() const { return m_pixelRect; }
@@ -50,14 +49,17 @@ public:
     };
 
     virtual void Text(const MUtils::NVec2f& pos, float size, const MUtils::NVec4f& color, const char* pszText, const char* pszFace = nullptr, uint32_t align = TEXT_ALIGN_MIDDLE | TEXT_ALIGN_CENTER) = 0;
+    virtual void Update(const MUtils::NVec2f& size, const MUtils::NVec2f& mousePos);
 
-    virtual void Update();
-
+    virtual MUtils::NVec2f GetMousePos() const { return m_mousePos;  }
+    virtual MUtils::NVec2f GetViewMousePos() const { return PixelToView(m_mousePos); }
 private:
     Graph& m_graph;
     MUtils::NRectf m_pixelRect; // Pixel size on screen of canvas
-    float m_scale = 1.0f;
-    MUtils::NVec2f m_origin = NVec2f(0.0f);
+    MUtils::NVec2f m_mousePos;
+
+    MUtils::NVec2f m_viewOrigin;
+    float m_viewScale = 1.0f;
 };
 
 class CanvasVG : public Canvas
