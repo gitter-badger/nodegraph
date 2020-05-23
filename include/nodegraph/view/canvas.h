@@ -35,8 +35,7 @@ struct CanvasInputState
 class Canvas
 {
 public:
-    Canvas(Graph& graph)
-        : m_graph(graph)
+    Canvas()
     {
     }
 
@@ -90,7 +89,6 @@ public:
     void Capture(bool cap) { m_inputState.captured = cap; }
 
 protected:
-    Graph& m_graph;
     MUtils::NRectf m_pixelRect; // Pixel size on screen of canvas
 
     MUtils::NVec2f m_viewOrigin;
@@ -102,8 +100,8 @@ protected:
 class CanvasVG : public Canvas
 {
 public:
-    CanvasVG(Graph& graph, NVGcontext* vgContext)
-        : Canvas(graph)
+    CanvasVG(NVGcontext* vgContext)
+        : Canvas()
         , vg(vgContext)
     {
     }

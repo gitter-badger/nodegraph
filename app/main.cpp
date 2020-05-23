@@ -140,7 +140,7 @@ public:
         auto path = this->GetRootPath() / "run_tree" / "fonts" / "Roboto-Regular.ttf";
         auto font = nvgCreateFont(vg, "sans", path.string().c_str());
 
-        spCanvas = std::make_shared<CanvasVG>(graph, vg);
+        spCanvas = std::make_shared<CanvasVG>(vg);
         spGraphView = std::make_shared<GraphView>(graph, *spCanvas);
         spGraphView->BuildNodes();
     }

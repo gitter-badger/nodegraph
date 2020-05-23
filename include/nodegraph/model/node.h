@@ -15,6 +15,7 @@ namespace NodeGraph
 {
 
 class GraphView;
+class Canvas;
 class Node;
 
 #define DECLARE_NODE(className, APIName)                  \
@@ -135,8 +136,8 @@ public:
         m_viewCells = cells;
     }
 
-    virtual void DrawCustom(GraphView& view, NVGcontext*, const MUtils::NRectf&) { };
-    virtual void DrawCustomPin(GraphView& view, NVGcontext*, const MUtils::NRectf&, Pin& pin) { };
+    virtual void DrawCustom(GraphView& view, Canvas& canvas, const MUtils::NRectf&) { };
+    virtual void DrawCustomPin(GraphView& view, Canvas& canvas, const MUtils::NRectf&, Pin& pin) { };
 
     bool IsHidden() const { return m_hidden; }
     void SetHidden(bool hidden) { m_hidden = hidden; }

@@ -592,7 +592,7 @@ void GraphView::Show(const NVec2i& displaySize)
         nodeSize.x = gridSize.x * node_gridScale - node_borderPad * 2.0f;
         nodeSize.y = (gridSize.y * node_gridScale) + node_titleHeight + node_titleBorder;
 
-        if ((currentPos.x + nodeSize.x) > displaySize.x)
+        if (currentPos.x + nodeSize.x > displaySize.x)
         {
             currentPos.x = node_borderPad;
             currentPos.y += maxHeightNode + node_borderPad;
@@ -637,7 +637,7 @@ void GraphView::Show(const NVec2i& displaySize)
             else if (pInput->GetAttributes().ui == ParameterUI::Custom)
             {
                 pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, -node_pinPad);
-                pWorld->DrawCustomPin(*this, vg, pinCell, *pInput);
+                pWorld->DrawCustomPin(*this, m_canvas, pinCell, *pInput);
             }
         }
 
@@ -655,7 +655,7 @@ void GraphView::Show(const NVec2i& displaySize)
 
             m_canvas.FillRoundedRect(cell, node_borderRadius, pinBGColor);
 
-            pWorld->DrawCustom(*this, vg, cell);
+            pWorld->DrawCustom(*this, m_canvas, cell);
         }
 
         maxHeightNode = std::max(maxHeightNode, nodeSize.y + node_borderPad * 2.0f);

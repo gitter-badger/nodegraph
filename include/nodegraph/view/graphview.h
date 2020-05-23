@@ -42,6 +42,7 @@ public:
     bool CheckCapture(Parameter& param, const MUtils::NRectf& region, bool& hover);
     bool HideCursor() const { return m_hideCursor; }
 
+    Canvas& GetCanvas() const { return m_canvas; }
 private:
     enum class InputDirection { X, Y };
 
