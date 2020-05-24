@@ -226,5 +226,70 @@ void CanvasVG::DrawGrid(float viewStep)
     }
     nvgShapeAntiAlias(vg, 1);
 }
+    
+void CanvasVG::SetAA(bool set)
+{
+    nvgShapeAntiAlias(vg, set ? 1 : 0);
+}
+
+void CanvasVG::BeginStroke(const MUtils::NVec2f& from, float width, const MUtils::NVec4f& color)
+{
+    auto viewPos = ViewToPixels(from);
+    auto size = WorldSizeToViewSizeX(width);
+    nvgBeginPath(vg);
+    nvgStrokeColor(vg, ToNVGColor(color));
+    nvgStrokeWidth(vg, size);
+    nvgMoveTo(vg, viewPos.x, viewPos.y);
+}
+
+void CanvasVG::BeginPath(const MUtils::NVec2f& from, const MUtils::NVec4f& color)
+{
+    auto viewPos = ViewToPixels(from);
+    nvgPathWinding(vg, NVGwinding::NVG_CCW);
+    nvgBeginPath(vg);
+    nvgFillColor(vg, ToNVGColor(color));
+    nvgMoveTo(vg, viewPos.x, viewPos.y);
+}
+
+void CanvasVG::LineTo(const MUtils::NVec2f& to)
+{
+    auto viewPos = ViewToPixels(to);
+    nvgLineTo(vg, viewPos.x, viewPos.y);
+}
+
+void CanvasVG::MoveTo(const MUtils::NVec2f& to)
+{
+    auto viewPos = ViewToPixels(to);
+    nvgMoveTo(vg, viewPos.x, viewPos.y);
+}
+
+void CanvasVG::EndStroke()
+{
+    nvgStroke(vg);
+}
+
+void CanvasVG::EndPath()
+{
+    nvgFill(vg);
+}
+
+void CanvasVG::SetLineCap(LineCap cap)
+{
+    if (cap == LineCap::BUTT)
+    {
+        nvgLineCap(vg, NVG_BUTT);
+        nvgLineJoin(vg, NVG_BUTT);
+    }
+    else
+    {
+        nvgLineCap(vg, NVG_ROUND);
+        nvgLineJoin(vg, NVG_ROUND);
+    }
+}
+
+void CanvasVG::ClosePath()
+{
+    nvgClosePath(vg);
+}
 
 } // namespace NodeGraph

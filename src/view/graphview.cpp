@@ -634,6 +634,7 @@ void GraphView::Show(const NVec2i& displaySize)
                 pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, -node_pinPad);
                 DrawButton(pinCell, *pInput);
             }
+            
             else if (pInput->GetAttributes().ui == ParameterUI::Custom)
             {
                 pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, -node_pinPad);
