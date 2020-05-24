@@ -128,7 +128,7 @@ public:
 
     virtual void Arc(const MUtils::NVec2f& pos, float radius, float width, const MUtils::NVec4f& color, float startAngle, float endAngle) override;
 
-    virtual void DrawGrid(float viewStep);
+    virtual void DrawGrid(float viewStep) override;
 
 private:
     NVGcontext* vg = nullptr;

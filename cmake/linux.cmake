@@ -19,4 +19,5 @@ LIST(APPEND PLATFORM_LINKLIBS
     stdc++fs
     freetype
     ${OPENGL_LIBRARY}
+    lz
     )
