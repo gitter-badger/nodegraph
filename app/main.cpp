@@ -63,6 +63,7 @@ public:
 
         if (pValue2)
             pValue2->SetViewCells(NRectf(0, 0, 1, 1));
+        /*
         if (pValue3)
             pValue3->SetViewCells(NRectf(1, 0, 1, 1));
         if (pValue4)
@@ -83,6 +84,7 @@ public:
             pValue1->SetViewCells(NRectf(5, 1, 1, 1));
         if (pSum)
             pSum->SetViewCells(NRectf(3, 1, 1, 1));
+            */
 
         pSlider->SetViewCells(NRectf(.25f, 1, 2.5f, .5f));
         pButton->SetViewCells(NRectf(.25f, 1.5, 2.5f, .5f));

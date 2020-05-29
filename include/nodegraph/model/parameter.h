@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <unordered_set>
 
 namespace NodeGraph
 {
@@ -514,6 +515,19 @@ public:
     {
     }
 
+    ~Parameter()
+    {
+        // Remove ourselves from the double linked list
+        if (m_pNextShadow)
+        {
+            m_pNextShadow->m_pPrevShadow = m_pPrevShadow;
+        }
+        if (m_pPrevShadow)
+        {
+            m_pPrevShadow->m_pNextShadow = m_pNextShadow;
+        }
+    }
+
     explicit Parameter(float val, const ParameterAttributes& attrib = ParameterAttributes{})
         : m_value(val)
         , m_initValue(val)
@@ -707,6 +721,29 @@ public:
         }
     }
 
+    void SetShadow(const Parameter& p, bool forward)
+    {
+        m_startValue = p.m_startValue;
+        m_endValue = p.m_endValue;
+        m_value = p.m_value;
+        m_startTick = p.m_startTick;
+
+        if (forward)
+        {
+            if (m_pNextShadow)
+            {
+                m_pNextShadow->SetShadow(p, true);
+            }
+        }
+        else
+        {
+            if (m_pPrevShadow)
+            {
+                m_pPrevShadow->SetShadow(p, false);
+            }
+        }
+    }
+
     template <class T>
     void Set(const T& val, bool immediate = false)
     {
@@ -722,26 +759,38 @@ public:
         if (m_value.type == ParameterType::FlowData || m_value.type == ParameterType::ControlData || m_value.type == ParameterType::String)
         {
             m_value = val;
-            return;
-        }
-
-        m_endValue = val;
-        if (immediate)
-        {
-            m_startValue = val;
-            m_value = val;
-            m_startTick = 0;
         }
         else
         {
-            if (m_value.type == ParameterType::None)
-            {
-                m_value = val;
-            }
-            // m_value stays where it is
-            m_startValue = m_value;
-            m_startTick = m_currentTick;
             m_endValue = val;
+            if (immediate)
+            {
+                m_startValue = val;
+                m_value = val;
+                m_startTick = 0;
+            }
+            else
+            {
+                if (m_value.type == ParameterType::None)
+                {
+                    m_value = val;
+                }
+                // m_value stays where it is
+                m_startValue = m_value;
+                m_startTick = m_currentTick;
+                m_endValue = val;
+            }
+        }
+
+        // Walk outwards to the shadow variables
+        if (m_pNextShadow)
+        { 
+            m_pNextShadow->SetShadow(*this, true);
+        }
+
+        if (m_pPrevShadow)
+        {
+            m_pPrevShadow->SetShadow(*this, false);
         }
     }
 
@@ -761,12 +810,16 @@ public:
         auto min = m_attributes.min.To<double>();
         auto max = m_attributes.max.To<double>();
 
+        double ret;
         if (m_attributes.taper == 1.0f)
         {
-            return (To<double>() - min) / (max - min);
+            ret = (To<double>() - min) / (max - min);
         }
-        // Taper == 1 is linear
-        return std::pow(((To<double>() - min) / (max - min)), (1.0 / m_attributes.taper));
+        else
+        {
+            ret = std::pow(((To<double>() - min) / (max - min)), (1.0 / m_attributes.taper));
+        }
+        return std::clamp(ret, 0.0, 1.0);
     }
 
     double NormalizedStep() const
@@ -780,13 +833,21 @@ public:
     {
         auto min = m_attributes.min.To<double>();
         auto max = m_attributes.max.To<double>();
+        auto origin = m_attributes.origin.To<double>();
+        origin = std::max(origin, min);
 
+        double ret;
         if (m_attributes.taper == 1.0f)
         {
-            return std::clamp((m_attributes.origin.To<double>() - min) / (max - min), 0.0, 1.0);
+            ret = ((m_attributes.origin.To<double>() - min) / (max - min));
         }
-        // Taper == 1 is linear
-        return std::clamp(std::pow((((double)m_attributes.origin.To<double>() - min) / (max - min)), (1.0 / m_attributes.taper)), 0.0, 1.0);
+        else
+        {
+            // Taper == 1 is linear
+            auto p = (origin - min) / (max - min);
+            ret = (std::pow(p, (1.0 / (double)m_attributes.taper)));
+        }
+        return std::clamp(ret, 0.0, 1.0);
     }
 
     void SetFromNormalized(double val)
@@ -802,6 +863,29 @@ public:
 
         // algebraic taper
         SetFrom<double>(min + (max - min) * std::pow(val, m_attributes.taper));
+    }
+
+    void Shadow(Parameter* pParam)
+    {
+        if (!pParam)
+        {
+            throw std::invalid_argument("Null parameter passed to shadow");
+        }
+
+        if (pParam == this)
+        {
+            throw std::invalid_argument("Parameter not allowed to be this");
+        }
+   
+        // Insert onto the end
+        auto pEnd = pParam;
+        while (pEnd->m_pNextShadow != nullptr)
+        {
+            pEnd = pEnd->m_pNextShadow;
+        }
+
+        pEnd->m_pNextShadow = this;
+        m_pPrevShadow = pEnd;
     }
 
 protected:
@@ -825,6 +909,10 @@ protected:
     int64_t m_currentTick = 0;
 
     uint64_t m_generation = 0;
+   
+    // Shadow parameters
+    Parameter* m_pNextShadow = nullptr;
+    Parameter* m_pPrevShadow = nullptr;
 };
 
 } // namespace NodeGraph

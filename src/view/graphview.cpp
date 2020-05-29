@@ -289,9 +289,10 @@ bool GraphView::DrawKnob(NVec2f pos, float knobSize, Pin& param)
     knobSize -= fontExtra;
     pos.y -= std::floor(fontExtra) - 1.0f;
 
+    float arcOffset = -270.0f;
     // The degree ranges corrected for NVG origin which is +90 degrees from top
-    float startArc = -180.0f - 60.0f;
-    float endArc = 60.0f;
+    float startArc = 55.0f;
+    float endArc = 360 - 55.0f;
 
     // The full range
     float arcRange = (endArc - startArc);
@@ -323,12 +324,12 @@ bool GraphView::DrawKnob(NVec2f pos, float knobSize, Pin& param)
     m_canvas.FilledGradientCircle(pos, knobSize, NRectf(pos.x, pos.y - knobSize, 0, knobSize * 1.5f), colorHL, color);
 
     // the notch on the button/indicator
-    auto markerAngle = nvgDegToRad(posArc + startArc - 120.0f);
+    auto markerAngle = nvgDegToRad(posArc + arcOffset);
     auto markVector = NVec2f(std::cos(markerAngle), std::sin(markerAngle));
     m_canvas.Stroke(pos + markVector * (markerInset - node_shadowSize), pos + markVector * (knobSize - node_shadowSize), channelWidth, shadowColor);
     m_canvas.Stroke(pos + markVector * markerInset, pos + markVector * (knobSize - node_shadowSize * 2), channelWidth - node_shadowSize, markColor);
 
-    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelColor, startArc, 60.0f);
+    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelColor, startArc + arcOffset, endArc + arcOffset);
 
     // Cover the shortest arc between the 2 points
     if (posArcBegin > posArc)
@@ -336,15 +337,15 @@ bool GraphView::DrawKnob(NVec2f pos, float knobSize, Pin& param)
         std::swap(posArcBegin, posArc);
     }
 
-    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHLColor, posArcBegin, posArc);
+    m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHLColor, posArcBegin + arcOffset, posArc + arcOffset);
 
     if (fCurrentVal > (fMax + std::numeric_limits<float>::epsilon()))
     {
-        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, endArc - 10, endArc);
+        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, endArc - 10 + arcOffset, endArc + arcOffset);
     }
     else if (fCurrentVal < (fMin - std::numeric_limits<float>::epsilon()))
     {
-        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, startArc, startArc + 10);
+        m_canvas.Arc(pos, knobSize + channelGap, channelWidth, channelHighColor, startArc + arcOffset, startArc + 10 + arcOffset);
     }
 
     m_canvas.Text(NVec2f(pos.x, pos.y + knobSize + channelGap + fontSize * 0.5f + 2.0f), fontSize, fontColor, label.c_str());
