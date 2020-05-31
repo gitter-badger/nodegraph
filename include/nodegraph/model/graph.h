@@ -68,13 +68,16 @@ public:
 
     TPool& ThreadPool() { return m_threadPool; }
 
-    const std::vector<Node*> GetEvalNodes() const { return evalNodes; }
-    
+    const std::vector<Node*>& GetEvalNodes() const { return evalNodes; }
+   
+    const std::vector<Node*>& GetOutputNodes() const { return m_outputNodes; }
+    void SetOutputNoes(const std::vector<Node*>& nodes) { m_outputNodes = nodes; }
 protected:
     std::set<std::shared_ptr<Node>> nodes;
     std::vector<Node*> evalNodes;
     uint64_t currentGeneration = 1;
     TPool m_threadPool;
+    std::vector<Node*> m_outputNodes;
 }; // Graph
 
 } // namespace NodeGraph

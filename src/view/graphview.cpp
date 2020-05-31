@@ -64,7 +64,7 @@ bool GraphView::ShowNode(const Node* pNode) const
 
 void GraphView::BuildNodes()
 {
-    auto ins = m_graph.GetEvalNodes();
+    const auto& ins = m_graph.GetEvalNodes();
     for (auto& pNode : ins)
     {
         if (mapWorldToView.find(pNode) == mapWorldToView.end())
@@ -538,6 +538,9 @@ NRectf GraphView::DrawNode(const NRectf& pos, Node* pNode)
 
     m_canvas.Text(NVec2f(pos.Center().x, pos.Top() + node_titleBorder + node_titleHeight * .5f), node_titleFontSize, node_TitleColor, pNode->GetName().c_str());
 
+#ifdef _DEBUG
+    m_canvas.Text(NVec2f(pos.Left() + node_titleBorder * 3.0f, pos.Top() + node_titleBorder + node_titleHeight * .5f), node_titleFontSize / 2, NVec4f(.9f), fmt::format("{}", pNode->GetGeneration()).c_str());
+#endif
     auto contentRect = NRectf(pos.Left() + node_borderPad, pos.Top() + node_titleBorder + node_titleHeight + node_borderPad, pos.Width() - (node_borderPad * 2), pos.Height() - node_titleHeight - (node_titleBorder * 2.0f) - node_borderPad);
 
     return contentRect;
