@@ -217,6 +217,9 @@ void GraphView::DrawLabel(Parameter& param, const NVec2f& pos)
         break;
     case ParameterDisplayType::Custom:
         val += param.GetAttributes().postFix;
+        break;
+    case ParameterDisplayType::None:
+        return;
     default:
         break;
     }
@@ -371,14 +374,14 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 
     auto& attrib = param.GetAttributes();
 
-    float fCurrentVal = param.To<float>();
-    float fMin = attrib.min.To<float>();
-    float fMax = attrib.max.To<float>();
-    float fOrigin = attrib.origin.To<float>();
-    float fThumb = attrib.thumb.To<float>();
-    float fRange = fMax - fMin;
+    float fMin = 0.0f;
+    float fMax = 1.0f;
+    float fCurrentVal = (float)param.Normalized();
+    float fStep = (float)param.NormalizedStep();
+    float fOrigin = (float)param.NormalizedOrigin();
 
-    fThumb = std::clamp(fThumb, fRange * .1f, .9f);
+    float fRange = std::max(fMax - fMin, std::numeric_limits<float>::epsilon());
+    float fThumb = attrib.thumb.To<float>();
 
     // Draw the shadow
     m_canvas.FillRoundedRect(region, node_borderRadius, shadowColor);
@@ -404,10 +407,10 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
     fOrigin = std::clamp(fOrigin, fMin, fMax);
 
     // Figure out where the position is
-    float ratioPos = fabs((fVal - fMin) / (fMax - fMin));
+    float ratioPos = fabs((fVal - fMin) / fRange);
 
     // Figure out where the origin is on the arc
-    float ratioOrigin = fabs((fOrigin - fMin) / (fMax - fMin));
+    float ratioOrigin = fabs((fOrigin - fMin) / fRange);
 
     NRectf thumbRect = NRectf(region.Left() + ratioPos * fRegionWidthNoThumb,
         region.Top(),
@@ -417,7 +420,30 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
     bool hover = false;
     bool captured = false;
     float rangePerPixel = fRange / fRegionWidthNoThumb;
-    CheckInput(param, thumbRect, rangePerPixel, hover, captured, InputDirection::X);
+
+    if (param.GetSource() == nullptr)
+    {
+        bool down = m_pCaptureParam == &param;
+        captured = CheckCapture(param, thumbRect, hover);
+        if (captured)
+        {
+            if (!down)
+            {
+                m_startFloatVal = fVal;
+            }
+            auto pos = m_canvas.GetViewMousePos();
+            auto stepFactor = std::floor((fabs(pos.x - m_mouseStart.x) * rangePerPixel) / fStep);
+            if (stepFactor != 0.0f)
+            {
+                if (pos.x < m_mouseStart.x)
+                    stepFactor *= -1.0f;
+
+                auto newVal = m_startFloatVal + (stepFactor * fStep);
+                
+                param.SetFromNormalized(newVal);
+            }
+        }
+    }
 
     if (hover || captured)
     {

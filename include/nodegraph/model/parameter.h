@@ -493,7 +493,6 @@ struct ParameterAttributes
         max = _max;
         origin = _origin;
         step = _step;
-        thumb = _step;
     }
 
     // Typed as long long here, because Clang thinks int64_t != long long
@@ -503,7 +502,6 @@ struct ParameterAttributes
         max = (int64_t)_max;
         origin = (int64_t)_origin;
         step = (int64_t)_step;
-        thumb = (int64_t)_step;
     }
 };
 

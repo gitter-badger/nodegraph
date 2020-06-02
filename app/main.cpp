@@ -49,13 +49,19 @@ public:
         pSlider = AddInput("Slider", 0.5f);
         pButton = AddInput("Button", (int64_t)0);
 
+        pIntSlider = AddInput("Slider", (int64_t)0);
         pValue1 = AddInput("0-1f", .5f, ParameterAttributes(ParameterUI::Knob, 0.01f, 1.0f));
         pValue9 = AddInput("0-1f", .5f, ParameterAttributes(ParameterUI::Knob, 0.01f, 1.0f));
 
         ParameterAttributes sliderAttrib(ParameterUI::Slider, 0.0f, 1.0f);
         sliderAttrib.step = 0.25f;
-        sliderAttrib.thumb = .25f;
+        sliderAttrib.thumb = 0.25f;
         pSlider->SetAttributes(sliderAttrib);
+
+        ParameterAttributes sliderIntAttrib(ParameterUI::Slider, (int64_t)0, (int64_t)3);
+        sliderIntAttrib.step = (int64_t)1;
+        sliderIntAttrib.thumb = 1 / 4.0f;
+        pIntSlider->SetAttributes(sliderIntAttrib);
 
         ParameterAttributes buttonAttrib(ParameterUI::Button, -1ll, 3ll);
         buttonAttrib.labels = { "A", "B", "C" };
@@ -85,7 +91,8 @@ public:
             pSum->SetViewCells(NRectf(3, 1, 1, 1));
 
         pSlider->SetViewCells(NRectf(.25f, 1, 2.5f, .5f));
-        pButton->SetViewCells(NRectf(.25f, 1.5, 2.5f, .5f));
+        pIntSlider->SetViewCells(NRectf(.25f, 1.5, 2.5f, .5f));
+        pButton->SetViewCells(NRectf(.25f, 2.0, 2.5f, .5f));
     }
 
     virtual void Compute() override
@@ -106,6 +113,7 @@ public:
     Pin* pValue9 = nullptr;
     Pin* pButton = nullptr;
     Pin* pSlider = nullptr;
+    Pin* pIntSlider = nullptr;
 };
 
 std::vector<Node*> appNodes;

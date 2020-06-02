@@ -1,5 +1,7 @@
 if(WIN32)
 add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
+add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
+add_compile_options(-D_CRT_SECURE_NO_WARNINGS=1 -DGLM_ENABLE_EXPERIMENTAL -DGLM_LANG_STL11_FORCED -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DNOMINMAX -D_SCL_SECURE_NO_WARNINGS=1 -D_CRT_NONSTDC_NO_WARNINGS=1 -D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING -D_CRT_SECURE_NO_WARNINGS=1 -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -45,6 +47,76 @@ set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --track-fds=yes"
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes")
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --error-exitcode=1")
 
+# System flags
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    message(STATUS "TARGET_PC")
+    set(TARGET_PC 1)
+    
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
+    LIST(APPEND PLATFORM_LINKLIBS
+        opengl32.lib
+        winmm.lib   # SDL - sound, etc.
+        version.lib # SDL - windows keyboard
+        imm32.lib   # SDL - windows keyboard
+    )
+endif()
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    message(STATUS "TARGET_MAC")
+    
+    find_package(OpenGL REQUIRED)
+    find_package(Threads REQUIRED)
+    find_package(BZIP2 REQUIRED)
+    find_package(ZLIB REQUIRED)
+
+    if(NOT OPENGL_FOUND)
+        message(ERROR " OPENGL not found!")
+    endif(NOT OPENGL_FOUND)
+
+    include_directories(${OpenGL_INCLUDE_DIRS})
+    link_directories(${OpenGL_LIBRARY_DIRS})
+    add_definitions(${OpenGL_DEFINITIONS})
+
+    LIST(APPEND PLATFORM_LINKLIBS
+        ${OPENGL_LIBRARY}
+        ${BZIP2_LIBRARY}
+        ${ZLIB_LIBRARY}
+        dl
+        "-framework CoreFoundation"
+        )
+
+    set(TARGET_MAC 1)
+endif()
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    find_package(OpenGL REQUIRED)
+    if(NOT OPENGL_FOUND)
+        message(ERROR " OPENGL not found!")
+    endif(NOT OPENGL_FOUND)
+
+    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+    set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+    find_package(Threads REQUIRED)
+
+    include_directories(${OpenGL_INCLUDE_DIRS})
+    link_directories(${OpenGL_LIBRARY_DIRS})
+    add_definitions(${OpenGL_DEFINITIONS})
+
+    LIST(APPEND PLATFORM_LINKLIBS
+        dl 
+        Threads::Threads
+        stdc++fs
+        freetype
+        ${OPENGL_LIBRARY}
+        lz
+        )
+
+    message(STATUS "TARGET_LINUX")
+    set(TARGET_LINUX 1)
+endif()
+
 message(STATUS "System: ${CMAKE_SYSTEM}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Flags: ${CMAKE_CXX_FLAGS}")
@@ -52,43 +124,4 @@ message(STATUS "Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "Release Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "RelWithDebInfo Flags: ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 message(STATUS "Arch: ${PROCESSOR_ARCH}")
-
-# Compiler specific stuff
-if(CMAKE_COMPILER_IS_GNUCXX)
-  include(${PROJECT_SOURCE_DIR}/cmake/g++.cmake)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  include(${PROJECT_SOURCE_DIR}/cmake/clang++.cmake)
-elseif(MSVC)
-  include(${PROJECT_SOURCE_DIR}/cmake/msvc.cmake)
-else()
-  message(WARNING "Unknown compiler, not setting flags")
-endif()
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(ARCH_64 TRUE)
-  set(PROCESSOR_ARCH "x64")
-else()
-  set(ARCH_64 FALSE)
-  set(PROCESSOR_ARCH "x86")
-endif()
-
-# OS specific stuff
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-    message(STATUS "TARGET_PC")
-    set(TARGET_PC 1)
-    include(${PROJECT_SOURCE_DIR}/cmake/pc.cmake)
-endif()
-
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-    message(STATUS "TARGET_MAC")
-    SET(TARGET_MAC 1)
-    INCLUDE(${PROJECT_SOURCE_DIR}/cmake/mac.cmake)
-endif()
-
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-    message(STATUS "TARGET_LINUX")
-    SET(TARGET_LINUX 1)
-    INCLUDE(${PROJECT_SOURCE_DIR}/cmake/linux.cmake)
-endif()
-
 
