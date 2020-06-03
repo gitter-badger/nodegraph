@@ -155,6 +155,7 @@ public:
 
     virtual void Update(float time, const NVec2i& displaySize) override
     {
+        /*
         settings.flags &= ~AppStarterFlags::HideCursor;
         if (spGraphView)
         {
@@ -163,6 +164,7 @@ public:
                 settings.flags |= AppStarterFlags::HideCursor;
             }
         }
+        */
     }
 
     virtual void Destroy() override

@@ -59,8 +59,6 @@ private:
     Parameter* m_pCaptureParam = nullptr;
     MUtils::NVec2f m_mouseStart;
 
-    float m_startFloatVal;
-
     bool m_hideCursor = false;
     uint32_t m_currentInputIndex = 0;
 

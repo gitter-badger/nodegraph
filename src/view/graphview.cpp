@@ -406,13 +406,7 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
     // Clamp origin too
     fOrigin = std::clamp(fOrigin, fMin, fMax);
 
-    // Figure out where the position is
-    float ratioPos = fabs((fVal - fMin) / fRange);
-
-    // Figure out where the origin is on the arc
-    float ratioOrigin = fabs((fOrigin - fMin) / fRange);
-
-    NRectf thumbRect = NRectf(region.Left() + ratioPos * fRegionWidthNoThumb,
+    NRectf thumbRect = NRectf(region.Left() + fVal * fRegionWidthNoThumb,
         region.Top(),
         fThumbWidth,
         region.Height());
@@ -423,25 +417,15 @@ SliderData GraphView::DrawSlider(NRectf region, Pin& param)
 
     if (param.GetSource() == nullptr)
     {
-        bool down = m_pCaptureParam == &param;
-        captured = CheckCapture(param, thumbRect, hover);
+        captured = CheckCapture(param, region, hover);
         if (captured)
         {
-            if (!down)
-            {
-                m_startFloatVal = fVal;
-            }
             auto pos = m_canvas.GetViewMousePos();
-            auto stepFactor = std::floor((fabs(pos.x - m_mouseStart.x) * rangePerPixel) / fStep);
-            if (stepFactor != 0.0f)
-            {
-                if (pos.x < m_mouseStart.x)
-                    stepFactor *= -1.0f;
+            auto fNewVal = ((pos.x - region.Left()) * rangePerPixel) - (fThumbWidth * .5f * rangePerPixel);
 
-                auto newVal = m_startFloatVal + (stepFactor * fStep);
-                
-                param.SetFromNormalized(newVal);
-            }
+            auto fQuant = std::floor(fNewVal / fStep) * fStep;
+
+            param.SetFromNormalized(fQuant);
         }
     }
 
@@ -489,6 +473,10 @@ void GraphView::DrawButton(NRectf region, Pin& param)
     auto currentButton = param.To<int64_t>();
     auto numButtons = attrib.max.To<int64_t>();
     bool canDisable = attrib.min.To<int64_t>() < 0 ? true : false;
+    if (attrib.multiSelect)
+    {
+        canDisable = true;
+    }
 
     float buttonWidth = region.Width() / numButtons;
     buttonWidth -= node_buttonPad;
@@ -503,21 +491,46 @@ void GraphView::DrawButton(NRectf region, Pin& param)
         bool overButton = buttonRegion.Contains(NVec2f(mousePos.x, mousePos.y));
         if (overButton && state.buttonClicked[MOUSE_LEFT])
         {
-            if (canDisable && currentButton == i)
+            if (!attrib.multiSelect)
             {
-                currentButton = -1;
+                if (canDisable && currentButton == i)
+                {
+                    currentButton = -1;
+                }
+                else
+                {
+                    currentButton = i;
+                }
             }
             else
             {
-                currentButton = i;
+                if (currentButton & ((int64_t)1 << i))
+                {
+                    currentButton &= ~((int64_t)1 << i);
+                }
+                else
+                {
+                    currentButton |= ((int64_t)1 << i);
+                }
             }
             param.SetFrom<int64_t>(currentButton);
         }
 
         auto buttonColor = markColor;
-        if (i == currentButton)
+
+        if (!attrib.multiSelect)
         {
-            buttonColor = channelHLColor;
+            if (i == currentButton)
+            {
+                buttonColor = channelHLColor;
+            }
+        }
+        else
+        {
+            if (currentButton & ((int64_t)1 << i))
+            {
+                buttonColor = channelHLColor;
+            }
         }
         auto buttonHLColor = buttonColor + NVec4f(.05f, .05f, .05f, 0.0f);
 
@@ -664,7 +677,7 @@ void GraphView::Show(const NVec2i& displaySize)
                 pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, -node_pinPad);
                 DrawButton(pinCell, *pInput);
             }
-            
+
             else if (pInput->GetAttributes().ui == ParameterUI::Custom)
             {
                 pinCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, -node_pinPad);
@@ -699,7 +712,6 @@ void GraphView::Show(const NVec2i& displaySize)
     }
 
     nvgEndFrame(vg);
-
 }
 
 } // namespace NodeGraph

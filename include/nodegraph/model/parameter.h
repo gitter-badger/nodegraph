@@ -469,6 +469,7 @@ struct ParameterAttributes
     ParameterValue thumb;
 
     ParameterUI ui = ParameterUI::None;
+    bool multiSelect = false;
     ParameterDisplayType displayType = ParameterDisplayType::Custom;
     std::string postFix;
     uint32_t flags = ParameterFlags::None;
