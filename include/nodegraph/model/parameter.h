@@ -527,6 +527,19 @@ public:
         }
     }
 
+    explicit Parameter(const Parameter& rhs)
+        : m_value(rhs.m_value),
+        m_initValue(rhs.m_initValue),
+        m_attributes(rhs.m_attributes),
+        m_currentTick(rhs.m_currentTick),
+        m_generation(rhs.m_generation),
+        m_endValue(rhs.m_endValue),
+        m_startTick(rhs.m_startTick),
+        m_lerpTicks(rhs.m_lerpTicks)
+    {
+
+    }
+
     explicit Parameter(float val, const ParameterAttributes& attrib = ParameterAttributes{})
         : m_value(val)
         , m_initValue(val)

@@ -20,8 +20,8 @@ struct SliderData
 class GraphView
 {
 public:
-    GraphView(Graph& graph, Canvas& canvas)
-        : m_graph(graph),
+    GraphView(Graph& m_graph, Canvas& canvas)
+        : m_graph(m_graph),
         m_canvas(canvas)
     {
         vg = static_cast<CanvasVG&>(canvas).GetVG();
@@ -38,6 +38,7 @@ public:
     MUtils::NRectf DrawNode(const MUtils::NRectf& pos, Node* pNode);
 
     void DrawLabel(Parameter& param, const MUtils::NVec2f& pos);
+    void DrawDecorator(NodeDecorator& decorator, const MUtils::NRectf& rc);
 
     bool CheckCapture(Parameter& param, const MUtils::NRectf& region, bool& hover);
     bool HideCursor() const { return m_hideCursor; }
@@ -58,6 +59,7 @@ private:
 
     Parameter* m_pCaptureParam = nullptr;
     MUtils::NVec2f m_mouseStart;
+    std::shared_ptr<Parameter> m_pStartValue;
 
     bool m_hideCursor = false;
     uint32_t m_currentInputIndex = 0;

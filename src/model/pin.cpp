@@ -10,7 +10,7 @@ using namespace MUtils;
 namespace NodeGraph
 {
 
-// Pins on the graph node
+// Pins on the m_graph node
 Pin::Pin(Node& o, PinDir pinDir, const std::string& pinName, float val, const ParameterAttributes& attribs)
     : Parameter(val, attribs)
     , m_owner(o)

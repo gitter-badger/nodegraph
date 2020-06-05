@@ -9,8 +9,8 @@ class TestNode : public Node
 public:
     DECLARE_NODE(TestNode, adder);
 
-    TestNode(Graph& graph)
-        : Node(graph, "Adder")
+    TestNode(Graph& m_graph)
+        : Node(m_graph, "Adder")
     {
         pSum = AddOutput("Sum", .0f);
         pValue1 = AddInput("Value1", .0f);
@@ -83,7 +83,7 @@ TEST_CASE("NodeGraph.Nodes", "[Nodes]")
     auto val = pNode->pSum->GetValue<float>();
     REQUIRE_FALSE(val == .6f);
 
-    // Compute the graph at tick 0
+    // Compute the m_graph at tick 0
     g.Compute(std::vector<Node*>{pNode}, 0);
 
     // Get the result

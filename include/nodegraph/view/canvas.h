@@ -32,6 +32,7 @@ struct CanvasInputState
     bool buttonReleased[MouseButtons::MOUSE_MAX];
     MUtils::NVec2f dragDelta;
     MUtils::NVec2f mouseDelta;
+    bool slowDrag = false;
     float wheelDelta;
     bool canCapture = false;
     bool captured = false;

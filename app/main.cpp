@@ -7,6 +7,7 @@
 #include <SDL.h>
 #include <nodegraph/model/graph.h>
 #include <nodegraph/view/graphview.h>
+#include <nodegraph/view/canvas_imgui.h>
 
 #include <GL/gl3w.h>
 #include <nanovg/nanovg.h>
@@ -22,14 +23,18 @@ class TestNode : public Node
 public:
     DECLARE_NODE(TestNode, adder);
 
-    TestNode(Graph& graph)
-        : Node(graph, "UI Test")
+    TestNode(Graph& m_graph)
+        : Node(m_graph, "UI Test")
     {
         pSum = AddOutput("Sumf", .0f, ParameterAttributes(ParameterUI::Knob, 0.0f, 1.0f));
         pSum->GetAttributes().flags |= ParameterFlags::ReadOnly;
 
         pValue2 = AddInput("0-1000f", 5.0f, ParameterAttributes(ParameterUI::Knob, 0.01f, 1000.0f));
         pValue2->GetAttributes().taper = 2;
+
+        pValue10 = AddInput("2048-4800", (int64_t)48000, ParameterAttributes(ParameterUI::Knob, (int64_t)2048, (int64_t)48000));
+        pValue10->GetAttributes().taper = 4.6f;
+        pValue10->GetAttributes().postFix = "Hz";
 
         pValue3 = AddInput("-1->+1f", .001f, ParameterAttributes(ParameterUI::Knob, -1.0f, 1.0f));
 
@@ -81,6 +86,8 @@ public:
             pValue7->SetViewCells(NRectf(5, 0, 1, 1));
         if (pValue8)
             pValue8->SetViewCells(NRectf(6, 0, 1, 1));
+        if (pValue10)
+            pValue10->SetViewCells(NRectf(7, 0, 1, 1));
 
         // Sum
         if (pValue9)
@@ -93,6 +100,9 @@ public:
         pSlider->SetViewCells(NRectf(.25f, 1, 2.5f, .5f));
         pIntSlider->SetViewCells(NRectf(.25f, 1.5, 2.5f, .5f));
         pButton->SetViewCells(NRectf(.25f, 2.0, 2.5f, .5f));
+
+        auto pDecorator = AddDecorator(new NodeDecorator(DecoratorType::Label, "Label"));
+        pDecorator->gridLocation = NRectf(4, 1, 1, 1);
     }
 
     virtual void Compute() override
@@ -111,6 +121,7 @@ public:
     Pin* pValue7 = nullptr;
     Pin* pValue8 = nullptr;
     Pin* pValue9 = nullptr;
+    Pin* pValue10 = nullptr;
     Pin* pButton = nullptr;
     Pin* pSlider = nullptr;
     Pin* pIntSlider = nullptr;
@@ -123,16 +134,16 @@ class App : public IAppStarterClient
 public:
     App()
     {
-        settings.flags |= AppStarterFlags::DockingEnable;
-        settings.startSize = NVec2i(1680, 1000);
-        settings.clearColor = NVec4f(.2f, .2f, .2f, 1.0f);
-        settings.appName = "NodeGraph Test";
+        m_settings.flags |= AppStarterFlags::DockingEnable;
+        m_settings.startSize = NVec2i(1680, 1000);
+        m_settings.clearColor = NVec4f(.2f, .2f, .2f, 1.0f);
+        m_settings.appName = "NodeGraph Test";
 
-        appNodes.push_back(graph.CreateNode<EmptyNode>("Empty Node"));
-        appNodes.push_back(graph.CreateNode<TestNode>());
-        appNodes.push_back(graph.CreateNode<TestNode>());
-        appNodes.push_back(graph.CreateNode<TestNode>());
-        appNodes.push_back(graph.CreateNode<TestNode>());
+        appNodes.push_back(m_graph.CreateNode<EmptyNode>("Empty Node"));
+        appNodes.push_back(m_graph.CreateNode<TestNode>());
+        appNodes.push_back(m_graph.CreateNode<TestNode>());
+        appNodes.push_back(m_graph.CreateNode<TestNode>());
+        appNodes.push_back(m_graph.CreateNode<TestNode>());
     }
 
     // Inherited via IAppStarterClient
@@ -148,20 +159,20 @@ public:
         auto path = this->GetRootPath() / "run_tree" / "fonts" / "Roboto-Regular.ttf";
         auto font = nvgCreateFont(vg, "sans", path.string().c_str());
 
-        spCanvas = std::make_shared<CanvasVG>(vg);
-        spGraphView = std::make_shared<GraphView>(graph, *spCanvas);
-        spGraphView->BuildNodes();
+        m_spCanvas = std::make_shared<CanvasVG>(vg);
+        m_spGraphView = std::make_shared<GraphView>(m_graph, *m_spCanvas);
+        m_spGraphView->BuildNodes();
     }
 
     virtual void Update(float time, const NVec2i& displaySize) override
     {
         /*
-        settings.flags &= ~AppStarterFlags::HideCursor;
-        if (spGraphView)
+        m_settings.flags &= ~AppStarterFlags::HideCursor;
+        if (m_spGraphView)
         {
-            if (spGraphView->HideCursor())
+            if (m_spGraphView->HideCursor())
             {
-                settings.flags |= AppStarterFlags::HideCursor;
+                m_settings.flags |= AppStarterFlags::HideCursor;
             }
         }
         */
@@ -169,7 +180,7 @@ public:
 
     virtual void Destroy() override
     {
-        fbo_destroy(fbo);
+        fbo_destroy(m_fbo);
     }
 
     virtual void Draw(const NVec2i& displaySize) override
@@ -178,51 +189,35 @@ public:
 
     void DrawGraph(const NVec2i& canvasSize)
     {
-        if (spGraphView)
+        if (m_spGraphView)
         {
-            if (fbo.fbo == 0)
+            if (m_fbo.fbo == 0)
             {
-                fbo = fbo_create();
+                m_fbo = fbo_create();
             }
-            fbo_resize(fbo, canvasSize);
+            fbo_resize(m_fbo, canvasSize);
 
-            fbo_bind(fbo);
+            fbo_bind(m_fbo);
 
-            sdl_imgui_clear(settings.clearColor);
+            sdl_imgui_clear(m_settings.clearColor);
 
-            spGraphView->Show(canvasSize);
-            graph.Compute(appNodes, 0);
+            m_spGraphView->Show(canvasSize);
+            m_graph.Compute(appNodes, 0);
 
-            fbo_unbind(fbo, m_displaySize);
+            fbo_unbind(m_fbo, m_displaySize);
         }
     }
 
     void BeginCanvas(const NRectf& region)
     {
-        auto mousePos = ImGui::GetIO().MousePos;
-
-        CanvasInputState state;
-        state.mousePos = NVec2f(mousePos.x - region.Left(), mousePos.y - region.Top());
-        for (uint32_t i = 0; i < MOUSE_MAX; i++)
-        {
-            state.buttonClicked[i] = ImGui::GetIO().MouseClicked[i];
-            state.buttonReleased[i] = ImGui::GetIO().MouseReleased[i];
-            state.buttonDown[i] = ImGui::GetIO().MouseDown[i];
-        }
-        state.canCapture = ImGui::GetIO().WantCaptureMouse;
-        state.mouseDelta = ImGui::GetIO().MouseDelta;
-        state.dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
-        state.wheelDelta = ImGui::GetIO().MouseWheel;
-        state.resetDrag = false;
-        state.captured = false;
-
-        spCanvas->Update(region.Size(), state);
+        static CanvasInputState state;
+        m_spCanvas->Update(region.Size(), canvas_imgui_update_state(state, region));
     }
 
     void EndCanvas()
     {
-        ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = (spCanvas->GetInputState().captured);
-        if (spCanvas->GetInputState().resetDrag)
+        ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = (m_spCanvas->GetInputState().captured);
+        if (m_spCanvas->GetInputState().resetDrag)
         {
             ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
         }
@@ -240,7 +235,7 @@ public:
 
         DrawGraph(region.Size());
 
-        ImGui::Image(*(ImTextureID*)&fbo.fboTexture, ImVec2(region.Width(), region.Height()), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(*(ImTextureID*)&m_fbo.fboTexture, ImVec2(region.Width(), region.Height()), ImVec2(0, 1), ImVec2(1, 0));
 
         ImGui::End();
 
@@ -250,17 +245,18 @@ public:
 
     virtual AppStarterSettings& GetSettings() override
     {
-        return settings;
+        return m_settings;
     }
 
 private:
-    std::shared_ptr<NodeGraph::GraphView> spGraphView;
-    std::shared_ptr<NodeGraph::Canvas> spCanvas;
-    NodeGraph::Graph graph;
-    AppStarterSettings settings;
+    std::shared_ptr<NodeGraph::GraphView> m_spGraphView;
+    std::shared_ptr<NodeGraph::Canvas> m_spCanvas;
+    NodeGraph::Graph m_graph;
+    AppStarterSettings m_settings;
     NVGcontext* vg = nullptr;
-    MUtils::AppFBO fbo;
+    MUtils::AppFBO m_fbo;
     NVec2i m_displaySize = 0;
+    bool m_slowDrag = false;
 };
 
 App theApp;

@@ -24,7 +24,7 @@ public:
 
     void Destroy();
 
-    // Use this method to create nodes and add them to the graph
+    // Use this method to create nodes and add them to the m_graph
     template <typename T, typename... Args>
     T* CreateNode(Args&&... args)
     {

@@ -20,6 +20,10 @@ Node::~Node()
     {
         delete output;
     }
+    for (auto& decorator : m_decorators)
+    {
+        delete decorator;
+    }
 }
 
 void Node::ConnectTo(Node* pDest, uint32_t outputIndex, int32_t inputIndex)

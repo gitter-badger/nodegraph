@@ -18,6 +18,7 @@ NVec4f node_Color(.3f, .3f, .3f, 1.0f);
 NVec4f node_TitleColor(1.0f, 1.0f, 1.0f, 1.0f);
 NVec4f node_TitleBGColor(0.4f, .4f, 0.4f, 1.0f);
 NVec4f node_buttonTextColor(0.15f, .15f, 0.15f, 1.0f);
+NVec4f node_HLColor(0.98f, 0.48f, 0.28f, 1.0f);
 
 NVec4f node_shadowColor(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -100,6 +101,7 @@ bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover
             {
                 m_pCaptureParam = &param;
                 m_mouseStart = NVec2f(pos.x, pos.y);
+                m_pStartValue = std::make_shared<Parameter>(*m_pCaptureParam);
             }
         }
     }
@@ -125,49 +127,47 @@ bool GraphView::CheckCapture(Parameter& param, const NRectf& region, bool& hover
 
 void GraphView::EvaluateDragDelta(Pin& param, float rangePerDelta, InputDirection dir)
 {
-    const auto& attrib = param.GetAttributes();
-    const float fMin = 0.0f;
-    const float fMax = 1.0f;
-    const float fRange = fMax - fMin;
-    float fCurrentVal = (float)param.Normalized();
+    if (!m_pStartValue)
+    {
+        return;
+    }
 
+    const auto& attrib = param.GetAttributes();
+    const double fMin = 0.0;
+    const double fMax = 1.0;
+    const double fRange = fMax - fMin;
+    auto startValue = m_pStartValue->Normalized();
     auto const& state = m_canvas.GetInputState();
 
-    auto d = state.dragDelta;
-    float delta = (dir == InputDirection::X ? d.x : d.y);
+    NVec2f d = state.dragDelta;
+    if (state.slowDrag)
+    {
+        d *= .5f;
+    }
+    double delta = double(dir == InputDirection::X ? d.x : d.y);
+    double fStep = param.NormalizedStep();
 
-    float fStep = (float)param.NormalizedStep();
     if (param.GetType() == ParameterType::Int64)
     {
-        if (fStep == 0.0f)
+        if (fStep == 0.0)
         {
-            fStep = (float)std::abs(1.0 / (param.GetAttributes().max.To<double>() - param.GetAttributes().min.To<double>()));
-            fStep += std::numeric_limits<float>::epsilon();
+            fStep = std::abs(1.0 / (param.GetAttributes().max.To<double>() - param.GetAttributes().min.To<double>()));
+            fStep += std::numeric_limits<double>::epsilon();
         }
     }
 
     if (std::fabs(delta) > 0)
     {
-        auto fNew = fCurrentVal + (delta * rangePerDelta);
+        auto fNew = startValue + (delta * rangePerDelta);
 
-        bool resetDrag = false;
-        if (fStep != 0.0f)
+        if (fStep != 0.0)
         {
-            if (std::fabs(fNew - fCurrentVal) < fStep)
-            {
-                return;
-            }
+            fNew = std::floor(fNew / fStep) * fStep;
         }
 
-        if (fNew != fCurrentVal)
+        if (fNew != startValue)
         {
             param.SetFromNormalized(fNew);
-            resetDrag = true;
-        }
-
-        if (resetDrag)
-        {
-            m_canvas.ResetDragDelta();
         }
     }
 }
@@ -182,6 +182,24 @@ void GraphView::CheckInput(Pin& param, const NRectf& region, float rangePerDelta
         {
             EvaluateDragDelta(param, rangePerDelta, dir);
         }
+    }
+}
+
+void GraphView::DrawDecorator(NodeDecorator& decorator, const NRectf& rc)
+{
+    static const NVec4f colorLabel(0.20f, 0.20f, 0.20f, 1.0f);
+    static const NVec4f fontColor(.8f, .8f, .8f, 1.0f);
+
+    if (decorator.type == DecoratorType::Label)
+    {
+        float fontSize = 24.0f;
+
+        m_canvas.Text(rc.Center(), fontSize, fontColor, decorator.strName.c_str());
+    }
+    else if (decorator.type == DecoratorType::Line)
+    {
+        auto center = rc.Center();
+        m_canvas.Stroke(NVec2f(rc.Left(), center.y), NVec2f(rc.Right(), center.y), 2.0f, node_shadowColor);
     }
 }
 
@@ -596,7 +614,6 @@ void GraphView::Show(const NVec2i& displaySize)
     NVec2f currentPos(node_borderPad, node_borderPad);
     NVec4f nodeColor(.5f, .5f, .5f, 1.0f);
     NVec4f pinBGColor(.2f, .2f, .2f, 1.0f);
-    NVec4f nodeTitleBGColor(0.3f, .3f, 0.3f, 1.0f);
     float nodeGap = 10.0f;
 
     float maxHeightNode = 0.0f;
@@ -645,6 +662,23 @@ void GraphView::Show(const NVec2i& displaySize)
         auto contentRect = DrawNode(NRectf(currentPos.x, currentPos.y, nodeSize.x, nodeSize.y), pWorld);
 
         auto cellSize = contentRect.Size() / gridSize;
+
+        for (auto& decorator : pWorld->GetDecorators())
+        {
+            auto decoratorGrid = decorator->gridLocation;
+            decoratorGrid.topLeftPx.x *= pWorld->GetGridScale().x;
+            decoratorGrid.topLeftPx.y *= pWorld->GetGridScale().y;
+            decoratorGrid.bottomRightPx.x *= pWorld->GetGridScale().x;
+            decoratorGrid.bottomRightPx.y *= pWorld->GetGridScale().y;
+
+            auto decoratorCell = NRectf(contentRect.Left() + (decoratorGrid.Left() * cellSize.x),
+                contentRect.Top() + (decoratorGrid.Top() * cellSize.y),
+                cellSize.x * decoratorGrid.Width(),
+                cellSize.y * decoratorGrid.Height());
+            decoratorCell.Adjust(node_pinPad, node_pinPad, -node_pinPad, /*-node_borderPad*/ 0.0f);
+
+            DrawDecorator(*decorator, decoratorCell);
+        }
 
         for (auto& pInput : pins)
         {

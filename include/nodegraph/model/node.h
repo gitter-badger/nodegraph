@@ -33,13 +33,37 @@ constexpr auto str_AutoGen = "auto";
 
 class Graph;
 
+enum class DecoratorType
+{
+    Label,
+    Line
+};
+
+struct NodeDecorator
+{
+    NodeDecorator(DecoratorType t, const std::string& name)
+        : type(t),
+        strName(name)
+    {
+    }
+    
+    NodeDecorator(DecoratorType t)
+        : type(t)
+    {
+    }
+
+    DecoratorType type = DecoratorType::Label;
+    std::string strName;
+    MUtils::NRectf gridLocation;
+};
+
 // A node with inputs, outputs and computation
 class Node
 {
 public:
-    explicit Node(Graph& graph, const std::string& name)
+    explicit Node(Graph& m_graph, const std::string& name)
         : m_strName(name),
-        m_graph(graph)
+        m_graph(m_graph)
     {
     };
 
@@ -120,6 +144,16 @@ public:
         return pPin;
     }
 
+    NodeDecorator* AddDecorator(NodeDecorator* decorator)
+    {
+        m_decorators.push_back(decorator);
+        return decorator;
+    }
+
+    const std::vector<NodeDecorator*>& GetDecorators() const
+    {
+        return m_decorators;
+    }
 
     virtual const MUtils::NVec2f GetGridScale() const
     {
@@ -156,6 +190,7 @@ protected:
     std::vector<Pin*> m_flowOutputs;
     std::vector<Pin*> m_controlInputs;
     std::vector<Pin*> m_controlOutputs;
+    std::vector<NodeDecorator*> m_decorators;
     uint64_t m_generation = 0;
     MUtils::NRectf m_viewCells;
     MUtils::NVec2f m_gridScale = MUtils::NVec2f(1.0f);
@@ -169,8 +204,8 @@ class EmptyNode : public Node
 public:
     DECLARE_NODE(EmptyNode, empty);
 
-    EmptyNode(Graph& graph, const std::string& strName)
-        : Node(graph, strName)
+    EmptyNode(Graph& m_graph, const std::string& strName)
+        : Node(m_graph, strName)
     {
     }
 };
