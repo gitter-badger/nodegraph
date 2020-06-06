@@ -65,7 +65,7 @@ bool GraphView::ShowNode(const Node* pNode) const
 
 void GraphView::BuildNodes()
 {
-    const auto& ins = m_graph.GetEvalNodes();
+    const auto& ins = m_graph.GetDisplayNodes();
     for (auto& pNode : ins)
     {
         if (mapWorldToView.find(pNode) == mapWorldToView.end())

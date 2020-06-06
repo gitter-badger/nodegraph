@@ -68,7 +68,7 @@ void Graph::Compute(const std::vector<Node*>& outNodes, int64_t numTicks)
 
     //LOG(DEBUG) << "Generation: " << currentGeneration;
 
-    evalNodes.clear();
+    m_displayNodes.clear();
 
     using fnEval = std::function<void(Node * pEvalNode)>;
     fnEval eval = [&](Node* pEvalNode) {
@@ -103,8 +103,6 @@ void Graph::Compute(const std::vector<Node*>& outNodes, int64_t numTicks)
         {
             pin->Update(numTicks);
         }
-
-        evalNodes.push_back(pEvalNode);
 
         //LOG(DEBUG) << "Computing: " << pEvalNode->GetType().name();
 
