@@ -65,11 +65,7 @@ void Graph::Compute(const std::vector<Node*>& outNodes, int64_t numTicks)
     MUtilsZoneScoped;
 
     currentGeneration++;
-
-    //LOG(DEBUG) << "Generation: " << currentGeneration;
-
-    m_displayNodes.clear();
-
+    
     using fnEval = std::function<void(Node * pEvalNode)>;
     fnEval eval = [&](Node* pEvalNode) {
 

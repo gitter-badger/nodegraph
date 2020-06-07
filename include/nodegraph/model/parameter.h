@@ -8,6 +8,7 @@
 #include <variant>
 #include <vector>
 #include <unordered_set>
+#include <functional>
 
 namespace NodeGraph
 {
@@ -754,6 +755,23 @@ public:
                 m_pPrevShadow->SetShadow(p, false);
             }
         }
+    }
+
+    void ForEachShadow(std::function<void(Parameter*)> fnCB)
+    {
+        auto pShadow = m_pNextShadow;
+        while (pShadow)
+        {
+            fnCB(pShadow);
+            pShadow = pShadow->m_pNextShadow;
+        };
+        
+        pShadow = m_pPrevShadow;
+        while (pShadow)
+        {
+            fnCB(pShadow);
+            pShadow = pShadow->m_pPrevShadow;
+        };
     }
 
     template <class T>
