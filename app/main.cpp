@@ -40,7 +40,7 @@ public:
 
         pValue4 = AddInput("-10->+1f", .001f, ParameterAttributes(ParameterUI::Knob, -10.0f, 1.0f));
 
-        pValue5 = AddInput("-10->10i", (int64_t)-10, ParameterAttributes(ParameterUI::Knob, (int64_t)-10, (int64_t)10));
+        pValue5 = AddInput("Small", (int64_t)-10, ParameterAttributes(ParameterUI::Knob, (int64_t)-10, (int64_t)10));
 
         pValue6 = AddInput("-10->10is", (int64_t)-10, ParameterAttributes(ParameterUI::Knob, (int64_t)-10, (int64_t)10));
         pValue6->GetAttributes().step = (int64_t)4;
@@ -79,7 +79,7 @@ public:
         if (pValue4)
             pValue4->SetViewCells(NRectf(2, 0, 1, 1));
         if (pValue5)
-            pValue5->SetViewCells(NRectf(3, 0, 1, 1));
+            pValue5->SetViewCells(NRectf(3, 0, .5, .5));
         if (pValue6)
             pValue6->SetViewCells(NRectf(4, 0, 1, 1));
         if (pValue7)
