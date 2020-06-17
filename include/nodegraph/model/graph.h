@@ -30,6 +30,7 @@ public:
     {
         auto pNode = std::make_shared<T>(*this, std::forward<Args>(args)...);
         nodes.insert(pNode);
+        m_displayNodes.push_back(pNode.get());
         return pNode.get();
     }
 

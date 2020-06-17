@@ -220,7 +220,7 @@ void GraphView::DrawLabel(Parameter& param, const LabelInfo& info)
         }
         else
         {
-            val = fmt::format("{:.{}f}", fVal, 2);
+            val = fmt::format("{:.{}f}", fVal, 3);
         }
     }
     else

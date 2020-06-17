@@ -144,8 +144,6 @@ public:
         appNodes.push_back(m_graph.CreateNode<TestNode>());
         appNodes.push_back(m_graph.CreateNode<TestNode>());
         appNodes.push_back(m_graph.CreateNode<TestNode>());
-
-        m_graph.SetDisplayNodes(appNodes);
     }
 
     // Inherited via IAppStarterClient
