@@ -63,7 +63,8 @@ class Node
 public:
     explicit Node(Graph& m_graph, const std::string& name)
         : m_strName(name),
-        m_graph(m_graph)
+        m_graph(m_graph),
+        m_Id(CurrentId++)
     {
     };
 
@@ -181,7 +182,14 @@ public:
         return m_graph;
     }
 
+    uint64_t GetId() const
+    {
+        return m_Id;
+    }
+
 protected:
+    uint64_t m_Id;
+    static uint64_t CurrentId;
     ctti::type_id_t m_nodeType;
     std::string m_strName;
     std::vector<Pin*> m_inputs;

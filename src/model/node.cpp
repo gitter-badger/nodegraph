@@ -10,6 +10,8 @@ using namespace MUtils;
 namespace NodeGraph
 {
 
+uint64_t Node::CurrentId = 0;
+
 Node::~Node()
 {
     for (auto& input : m_inputs)
