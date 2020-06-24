@@ -110,7 +110,7 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
         stdc++fs
         freetype
         ${OPENGL_LIBRARY}
-        lz
+        z
         )
 
     message(STATUS "TARGET_LINUX")
